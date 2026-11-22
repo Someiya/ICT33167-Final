@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบจองคิวปุกปุย คลินิก</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600&family=Mitr:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a phone-sized clinic app (LINE-style) with a bottom tab bar; soft pastel world with our own round pet characters. */
+:root{
+  --bg:#FBF6EF; --surface:#FFFFFF; --ink:#3B3530; --muted:#968B80; --line:#EFE7DC;
+  --teal:#3FAFAA; --teal-d:#2A8C87; --teal-soft:#E0F4F2;
+  --yellow:#F4C83E; --yellow-ink:#4A3A0C; --peach:#FBE3D0; --butter:#FFF4D2;
+  --red:#E25B57; --red-soft:#FCE6E3; --ok:#3A9F6B; --ok-soft:#E2F4E9; --warn:#A8730A; --warn-soft:#FFF1CC;
+  --f-display:'Mitr','IBM Plex Sans Thai Looped',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans Thai Looped','Noto Sans Thai',system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#EADFD1;color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:2.5px solid var(--teal);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);font-weight:500;margin:0;line-height:1.3;text-wrap:balance}
+.tnum{font-variant-numeric:tabular-nums}
+
+.phone{height:100%;max-width:430px;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;position:relative}
+@media (min-width:600px){body{padding:24px 0}.phone{border-radius:30px;box-shadow:0 20px 60px rgba(80,55,30,.18);border:1px solid #E2D5C4}}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+
+/* app bar */
+.appbar{position:sticky;top:0;z-index:5;background:var(--surface);display:grid;grid-template-columns:84px 1fr 84px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);min-height:56px}
+.appbar h1{font-size:17px;text-align:center}
+.appbar .ab-right{display:flex;justify-content:flex-end;align-items:center}
+.appbar .ab-left{display:flex;align-items:center}
+.icon-btn{position:relative}
+.icon-btn .nb{position:absolute;top:2px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.icon-btn:hover{background:var(--bg)}
+.logo{display:grid;place-items:center}
+.staff{font-size:11px;background:var(--teal-soft);color:var(--teal-d);padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.progress{display:flex;gap:6px;padding:10px 16px 0}
+.progress i{flex:1;height:5px;border-radius:5px;background:var(--line)}
+.progress i.on{background:var(--teal)}
+
+.pad{padding:16px}
+.sec{font-size:16px;margin:22px 0 10px}
+.q{font-size:18px;margin:18px 0 10px}
+.q small{font-family:var(--f-body);font-size:13px;color:var(--muted);font-weight:400;margin-left:6px}
+.q:first-child{margin-top:4px}
+
+/* hero */
+.hero{background:var(--peach);padding:18px 16px 0;border-radius:0 0 28px 28px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:var(--butter);right:-70px;top:-60px}
+.hero-top{position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+.hero .hi{margin:0;font-size:14px;color:#8A6A55}
+.hero h2{font-size:22px;margin:2px 0 4px}
+.hero p.sub{margin:0;font-size:13.5px;color:#8A6A55}
+.hero-mascot{flex:none;margin-bottom:-6px;animation:bob 3s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.friends{position:relative;display:flex;justify-content:center;margin-top:14px;padding-bottom:16px}
+.friends > *{margin:0 -7px;border:3px solid var(--peach);border-radius:50%;display:block}
+.friends > *:nth-child(odd){transform:translateY(-8px)}
+
+/* cards & lists */
+.card{background:var(--surface);border-radius:18px;border:1px solid var(--line)}
+.appt-card{display:block;width:100%;text-align:left;padding:14px;margin-top:4px}
+.ac-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.tag{font-size:12px;font-weight:600;color:var(--teal-d);background:var(--teal-soft);padding:2px 10px;border-radius:999px}
+.code{font-family:var(--f-display);font-size:13.5px;color:var(--muted);letter-spacing:.3px;font-variant-numeric:tabular-nums}
+.ac-main{display:flex;gap:12px;align-items:center}
+.ac-main b{font-family:var(--f-display);font-weight:500;font-size:17px;display:block}
+.ac-main span{display:block;font-size:13.5px;color:var(--muted)}
+.empty-card{margin-top:4px;padding:16px;display:flex;gap:12px;align-items:center;color:var(--muted);font-size:14px}
+
+.cta{display:block;width:100%;background:var(--yellow);color:var(--yellow-ink);font-family:var(--f-display);font-weight:500;font-size:17px;padding:14px;border-radius:999px;text-align:center;box-shadow:0 3px 0 #D9AC22}
+.cta:active{transform:translateY(2px);box-shadow:0 1px 0 #D9AC22}
+.cta:disabled{background:#E8E1D7;color:#B3A89B;box-shadow:none}
+.cta.teal{background:var(--teal);color:#fff;box-shadow:0 3px 0 var(--teal-d)}
+.ghost-btn{display:block;width:100%;padding:12px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-weight:500;text-align:center}
+.mt{margin-top:14px}
+
+.pets-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.pet-chip{flex:none;display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;background:var(--surface);border:1px solid var(--line);border-radius:999px}
+.pet-chip b{display:block;font-weight:600;font-size:14.5px;line-height:1.2}
+.pet-chip span{font-size:12.5px;color:var(--muted)}
+
+.list{background:var(--surface);border-radius:18px;border:1px solid var(--line);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);min-height:56px}
+.row:last-child{border-bottom:0}
+.row .grow{flex:1;min-width:0}
+.row b{display:block;font-weight:600}
+.row .s{display:block;font-size:13px;color:var(--muted)}
+.row .price{font-size:14px;color:var(--muted);white-space:nowrap}
+.row .ic{width:36px;height:36px;border-radius:12px;background:var(--teal-soft);color:var(--teal-d);display:grid;place-items:center;flex:none}
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid #D8CDBF;flex:none;display:grid;place-items:center}
+.row[aria-pressed="true"]{background:var(--teal-soft)}
+.row[aria-pressed="true"] .radio{border-color:var(--teal);background:var(--teal)}
+.row[aria-pressed="true"] .radio::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border-radius:999px;background:var(--surface);border:1.5px solid var(--line);font-size:14px}
+.chip[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
+
+.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none}
+.day{flex:none;width:64px;padding:8px 4px;border-radius:16px;background:var(--surface);border:1.5px solid var(--line);text-align:center}
+.day .wd{font-size:12px;color:var(--muted)}
+.day .dn{font-family:var(--f-display);font-size:22px;line-height:1.15}
+.day .st{font-size:11px;font-weight:600;color:var(--ok)}
+.day .st.full{color:var(--red)} .day .st.off{color:var(--muted)}
+.day[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+.day[aria-pressed="true"] .wd,.day[aria-pressed="true"] .st{color:#fff}
+.slot-h{font-size:13px;color:var(--muted);font-weight:600;margin:14px 0 8px}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slots.four{grid-template-columns:repeat(4,1fr)}
+.slot{padding:9px 4px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);text-align:center;line-height:1.2}
+.slot b{display:block;font-weight:600;font-variant-numeric:tabular-nums;font-size:15px}
+.slot span{font-size:11.5px;color:var(--ok)}
+.slot.full{background:var(--red-soft);border-color:transparent}
+.slot.full span{color:var(--red)}
+.slot.closed,.slot.past{background:transparent;border-style:dashed;color:#B9AEA1}
+.slot.closed span,.slot.past span{color:#B9AEA1}
+.slot[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+.slot[aria-pressed="true"] span{color:#fff}
+.slot.full[aria-pressed="true"]{background:var(--red-soft);border:1.5px solid var(--red);color:var(--red)}
+.slot.full[aria-pressed="true"] span{color:var(--red)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:4px;vertical-align:-1px;border:1.5px solid var(--line);background:var(--surface)}
+.legend .l-sel{background:var(--teal);border-color:var(--teal)}
+.legend .l-full{background:var(--red-soft);border-color:transparent}
+.legend .l-off{background:transparent;border-style:dashed}
+
+.sum-card{padding:16px}
+.sum-head{display:flex;gap:12px;align-items:center;padding-bottom:12px;border-bottom:1px dashed var(--line);margin-bottom:10px}
+.sum-head b{font-family:var(--f-display);font-weight:500;font-size:19px;display:block}
+.sum-head div span{font-size:13px;color:var(--muted)}
+.kv{display:grid;grid-template-columns:84px 1fr;gap:6px 10px;margin:0;font-size:14.5px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-weight:500}
+textarea{width:100%;min-height:76px;resize:vertical;font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px}
+textarea:focus{border-color:var(--teal);outline:none}
+.flabel{display:block;font-size:14px;font-weight:600;margin:16px 0 8px}
+.msg{border-radius:14px;padding:10px 12px;font-size:14px;margin-top:12px;display:flex;gap:8px;align-items:flex-start}
+.msg svg{flex:none;margin-top:2px}
+.msg.err{background:var(--red-soft);color:#B53E3B}
+.msg.info{background:var(--warn-soft);color:var(--warn)}
+.link-btn{display:block;margin:14px auto 0;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+
+.actionbar{padding:10px 16px 14px;background:var(--surface);border-top:1px solid var(--line)}
+
+/* bottom nav */
+.nav{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);padding:6px 4px 8px}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;color:#A79C90;padding:4px 0;position:relative}
+.nav button[aria-current="page"]{color:var(--teal-d);font-weight:600}
+.nav .nb{position:absolute;top:0;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center}
+
+/* done */
+.done{text-align:center;padding:28px 20px 20px}
+.done h2{font-size:24px;margin-top:8px}
+.done .big{font-family:var(--f-display);font-size:30px;color:var(--teal-d);letter-spacing:1px;margin:2px 0 14px}
+.done p{color:var(--muted);margin:4px 0}
+.done .card{text-align:left;padding:14px;margin:8px 0 12px}
+
+/* pills */
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.p-booked{background:var(--teal-soft);color:var(--teal-d)}
+.p-checkedin{background:var(--warn-soft);color:var(--warn)}
+.p-done{background:var(--ok-soft);color:var(--ok)}
+.p-cancelled{background:#F1ECE6;color:var(--muted)}
+.p-noshow{background:var(--red-soft);color:#B53E3B}
+
+/* mine */
+.appt{padding:14px;display:grid;gap:10px}
+.appt + .appt{margin-top:10px}
+.appt .ac-main b{font-size:16px}
+.appt.off{opacity:.65}
+.small-btn{padding:7px 14px;border-radius:999px;border:1.5px solid var(--line);font-size:13.5px;font-weight:500;background:var(--surface)}
+.small-btn.yellow{background:var(--yellow);border-color:var(--yellow);color:var(--yellow-ink)}
+.small-btn.green{background:var(--ok);border-color:var(--ok);color:#fff}
+.small-btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.hint{font-size:12.5px;color:var(--muted)}
+.empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 16px;color:var(--muted);text-align:center;font-size:14px}
+
+/* clinic */
+.seg{display:flex;background:#F1EAE0;border-radius:999px;padding:4px;margin:12px 16px 0}
+.seg button{flex:1;padding:8px 4px;border-radius:999px;font-size:14px;color:var(--muted);font-weight:500;position:relative}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(80,55,30,.12)}
+.seg .cnt{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--red);color:#fff;font-size:11px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 6px;text-align:center}
+.stat b{font-family:var(--f-display);font-weight:500;font-size:22px;display:block;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat span{font-size:11.5px;color:var(--muted)}
+.stat.s1 b{color:var(--teal-d)} .stat.s2 b{color:var(--warn)} .stat.s3 b{color:var(--ok)} .stat.s4 b{color:var(--red)}
+.qi{display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.qi:last-child{border-bottom:0}
+.qi.is-new{background:var(--butter)}
+.qi.off .nm{text-decoration:line-through;color:var(--muted)}
+.qi-time{font-family:var(--f-display);font-size:15px;font-variant-numeric:tabular-nums;padding-top:2px}
+.qi-main{display:flex;gap:10px;min-width:0}
+.qi-txt{flex:1;min-width:0}
+.qi-top{display:flex;justify-content:space-between;gap:6px;align-items:flex-start}
+.qi .nm{font-weight:600}
+.qi .s{display:block;font-size:12.5px;color:var(--muted)}
+.qi .note{display:block;font-size:12.5px;color:var(--warn);margin-top:2px}
+.qi-act{display:flex;gap:6px;margin-top:8px}
+.nt{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:flex-start}
+.nt:last-child{border-bottom:0}
+.nt.unread{background:#F3FAF9}
+.nt b{font-weight:600;font-size:14px;display:block}
+.nt.cancel b{color:#B53E3B}
+.nt span{display:block;font-size:12.5px;color:var(--muted)}
+.nt .dot{width:8px;height:8px;border-radius:50%;background:var(--red);margin-top:7px;flex:none}
+.switch-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px}
+.switch{width:50px;height:30px;border-radius:999px;background:#DCD2C5;position:relative;flex:none;transition:background .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--red)}
+.switch[aria-checked="true"]::after{transform:translateX(20px)}
+.mslot.m-closed{background:transparent;border-style:dashed}
+.mslot.m-closed span{color:var(--red)}
+.mslot.m-full span{color:var(--red)}
+.mslot:disabled{opacity:.5}
+
+/* pets + change */
+.pet-chip{text-align:left}
+.pet-chip .pok{color:var(--ok);font-weight:600}
+.pet-chip .pwarn,.pf-head .pwarn{color:var(--warn);font-weight:600}
+.pf-head .pok{color:var(--ok);font-weight:600}
+.pet-chip.add{border-style:dashed}
+.addic{width:40px;height:40px;border-radius:50%;background:var(--teal-soft);color:var(--teal-d);display:grid;place-items:center;font-size:22px;font-weight:600;flex:none}
+.pf-head{display:flex;gap:14px;align-items:center;padding:14px}
+.pf-head b{font-family:var(--f-display);font-weight:500;font-size:19px;display:block}
+.pf-head span{font-size:13px}
+.chg{display:block;font-size:12px;line-height:1.4;color:var(--warn);background:var(--warn-soft);border-radius:8px;padding:3px 8px;margin-top:5px;min-width:0}
+.appt{min-width:0}
+.msg.okm{background:var(--ok-soft);color:var(--ok)}
+/* login */
+.login{min-height:100%;display:flex;flex-direction:column}
+.login-hero{background:var(--peach);text-align:center;padding:36px 16px 26px;border-radius:0 0 32px 32px;position:relative;overflow:hidden}
+.login-hero::before{content:"";position:absolute;width:280px;height:280px;border-radius:50%;background:var(--butter);left:50%;top:-150px;transform:translateX(-50%)}
+.login-hero > *{position:relative}
+.login-hero svg{margin:0 auto}
+.login-hero h1{font-size:26px;margin-top:10px}
+.login-hero p{margin:2px 0 0;color:#8A6A55;font-size:14px}
+.inp{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px}
+.inp:focus{border-color:var(--teal);outline:none}
+.demo-acc{margin-top:18px;background:var(--surface);border:1.5px dashed #E2D5C4;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.demo-acc div{flex:1;font-size:13px;color:var(--muted)}
+.demo-acc b{display:block;color:var(--ink);font-size:13.5px}
+.lock{display:flex;gap:6px;align-items:center;justify-content:center;font-size:12.5px;color:var(--muted);margin-top:14px}
+.remind{display:flex;gap:10px;align-items:center;background:var(--butter);border:1px solid #F3E2A6;border-radius:14px;padding:10px 12px;margin-bottom:10px;font-size:14px;width:100%;text-align:left}
+.remind b{font-weight:600}
+/* ticket + live */
+.p-inroom{background:var(--red);color:#fff}
+.ticket{border-radius:22px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 24px rgba(80,55,30,.08)}
+.tk-top{background:var(--teal);color:#fff;padding:14px 18px 18px;position:relative;overflow:hidden}
+.tk-top::after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.12);right:-50px;top:-70px}
+.tk-brand{display:flex;gap:8px;align-items:center;font-family:var(--f-display);font-size:14px}
+.tk-q{display:flex;align-items:baseline;gap:10px;margin-top:10px}
+.tk-q span{opacity:.9;font-size:15px}
+.tk-q b{font-family:var(--f-display);font-size:60px;line-height:1;font-weight:500;font-variant-numeric:tabular-nums}
+.tk-when{font-size:14.5px;margin-top:4px}
+.tk-cut{height:24px;background:radial-gradient(circle at 0 50%,var(--bg) 11px,transparent 12px),radial-gradient(circle at 100% 50%,var(--bg) 11px,transparent 12px),var(--surface);position:relative}
+.tk-cut::before{content:"";position:absolute;left:22px;right:22px;top:50%;border-top:2px dashed var(--line)}
+.tk-body{padding:2px 18px 18px}
+.tk-qr{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.tk-qr svg{width:148px;height:148px}
+.qr-fallback{width:148px;height:148px;border:2px dashed var(--line);border-radius:12px;display:grid;place-items:center;color:var(--muted);font-size:13px}
+.live{padding:14px 16px;margin-top:14px}
+.live-h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.live-dot{width:10px;height:10px;border-radius:50%;background:var(--red);flex:none;animation:pulse 1.6s infinite}
+.live-dot.off{background:#CFC6BA;animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(226,91,87,.55)}70%{box-shadow:0 0 0 9px rgba(226,91,87,0)}100%{box-shadow:0 0 0 0 rgba(226,91,87,0)}}
+.live-big{font-family:var(--f-display);font-size:32px;margin-top:8px;color:var(--teal-d);line-height:1.2}
+.live-big.go{color:var(--red);animation:pop .7s ease}
+@keyframes pop{40%{transform:scale(1.1)}}
+.live-sub{color:var(--muted);font-size:14px}
+.now{margin-top:10px;background:var(--bg);border-radius:12px;padding:8px 12px;font-size:13.5px}
+.steps{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);padding:0;margin:16px 0 0}
+.steps li{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);position:relative;text-align:center}
+.steps li i{width:18px;height:18px;border-radius:50%;background:var(--line);position:relative;z-index:1;border:3px solid var(--surface)}
+.steps li::before{content:"";position:absolute;top:7.5px;right:50%;width:100%;height:3px;background:var(--line)}
+.steps li:first-child::before{display:none}
+.steps li.ok i,.steps li.cur i{background:var(--teal)}
+.steps li.ok::before,.steps li.cur::before{background:var(--teal)}
+.steps li.cur i{box-shadow:0 0 0 3px var(--teal-soft)}
+.steps li.cur span{color:var(--ink);font-weight:600}
+.mini-live{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-weight:600;color:var(--teal-d);font-size:14px}
+/* LINE */
+.line-card{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:#EAF8EF;border:1px solid #C5EBD2;border-radius:16px;padding:12px 14px;margin-bottom:12px}
+.line-card .lc-ic,.push-ic{width:38px;height:38px;border-radius:12px;background:#06C755;color:#fff;display:grid;place-items:center;flex:none}
+.line-card b{display:block;font-weight:600}
+.line-card .s{display:block;font-size:12.5px;color:var(--muted)}
+.lc-go{font-size:13px;color:#05A146;font-weight:600;white-space:nowrap}
+.small-btn.green-line{background:#06C755;border-color:#06C755;color:#fff;white-space:nowrap}
+.cta.line{background:#06C755;color:#fff;box-shadow:0 3px 0 #05A146}
+.lappbar{position:sticky;top:0;z-index:5;background:#fff;display:grid;grid-template-columns:48px 1fr 48px;align-items:center;padding:6px 8px;border-bottom:1px solid #E3E6EC;min-height:54px}
+.lappbar h1{font-size:16px;text-align:center}
+.lappbar h1 small{display:block;font-family:var(--f-body);font-size:11px;color:#8A93A6;font-weight:400}
+.lchat{background:#8FA8D3;min-height:calc(100% - 54px);padding:12px 10px 20px}
+.lday{margin:2px auto 14px;font-size:11.5px;color:#fff;background:rgba(0,0,0,.16);border-radius:999px;padding:2px 12px;width:max-content}
+.lm{display:flex;gap:8px;align-items:flex-end;margin-bottom:14px}
+.lm > svg{align-self:flex-start}
+.lm-c{max-width:78%}
+.lm-n{display:block;font-size:11.5px;color:#fff;margin-bottom:3px}
+.bub{background:#fff;border-radius:18px;border-top-left-radius:6px;padding:9px 12px;font-size:14.5px;line-height:1.45;width:max-content;max-width:100%}
+.lm-t{font-size:10.5px;color:#EEF2FA;white-space:nowrap}
+.flex{background:#fff;border-radius:16px;overflow:hidden;margin-top:6px;width:240px}
+.fx-h{padding:10px 14px;color:#fff;font-family:var(--f-display);font-size:15px;background:var(--teal)}
+.fx-h.fx-remind,.fx-h.fx-near{background:#EFA43A}
+.fx-h.fx-inroom{background:var(--red)}
+.fx-b{padding:10px 14px 8px}
+.fx-q{display:flex;gap:10px;align-items:center;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.fx-q b{font-family:var(--f-display);font-size:16px;font-weight:500;display:block}
+.fx-q span{font-size:12.5px;color:var(--muted)}
+.fx-row{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;padding:2px 0}
+.fx-row span{color:var(--muted)}
+.fx-btn{display:block;width:100%;padding:11px;border-top:1px solid var(--line);color:#05A146;font-weight:600;text-align:center}
+.rich{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-top:1px solid #E3E6EC}
+.rich button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px 16px;font-size:13px;font-weight:500;border-left:1px solid #E3E6EC;background:linear-gradient(#fff,#F6F1E9)}
+.rich button:first-child{border-left:0}
+.rich svg{color:var(--teal-d)}
+#push{position:absolute;top:8px;left:8px;right:8px;z-index:45}
+.push{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:rgba(255,255,255,.97);border-radius:18px;padding:10px 12px;box-shadow:0 12px 32px rgba(0,0,0,.2);animation:drop .35s ease}
+@keyframes drop{from{transform:translateY(-24px);opacity:0}to{transform:none;opacity:1}}
+.push-t{flex:1;min-width:0}
+.push-t b{display:block;font-size:12.5px}
+.push-t span{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.push-time{font-size:11px;color:var(--muted);align-self:flex-start}
+/* sheet + toast */
+.overlay{position:absolute;inset:0;background:rgba(59,53,48,.45);display:flex;align-items:flex-end;z-index:30}
+.sheet{background:var(--surface);width:100%;border-radius:24px 24px 0 0;padding:20px 18px 18px;animation:up .22s ease}
+.sheet h2{font-size:19px;margin-bottom:6px}
+.sheet p{color:var(--muted);margin:4px 0 0;font-size:14.5px}
+.sheet .btns{display:grid;gap:8px;margin-top:16px}
+.sheet .cta.red{background:var(--red);color:#fff;box-shadow:0 3px 0 #B9423F}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+#toast{position:absolute;left:0;right:0;bottom:84px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:40}
+.toast{background:rgba(59,53,48,.92);color:#fff;padding:8px 16px;border-radius:999px;font-size:13.5px;animation:up .2s ease}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="screen" id="screen"></div>
+  <div id="bar"></div>
+  <div id="modal"></div>
+  <div id="toast" aria-live="polite"></div>
+  <div id="push"></div>
+</div>
+<script>
+/* QR encoder: QRCode for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT License (via qrcode-terminal vendor) */
+var QRLib=(function(){var mods={},cache={};function req(n){n=n.replace('./','').replace('.js','');if(cache[n])return cache[n].exports;var m={exports:{}};cache[n]=m;mods[n](m,m.exports,req);return m.exports;}
+mods['QR8bitByte']=function(module,exports,require){
+var QRMode = require('./QRMode');
+
+function QR8bitByte(data) {
+	this.mode = QRMode.MODE_8BIT_BYTE;
+	this.data = data;
+}
+
+QR8bitByte.prototype = {
+
+	getLength : function() {
+		return this.data.length;
+	},
+	
+	write : function(buffer) {
+		for (var i = 0; i < this.data.length; i++) {
+			// not JIS ...
+			buffer.put(this.data.charCodeAt(i), 8);
+		}
+	}
+};
+
+module.exports = QR8bitByte;
+
+};
+mods['QRBitBuffer']=function(module,exports,require){
+function QRBitBuffer() {
+	this.buffer = [];
+	this.length = 0;
+}
+
+QRBitBuffer.prototype = {
+
+	get : function(index) {
+		var bufIndex = Math.floor(index / 8);
+		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+	},
+	
+	put : function(num, length) {
+		for (var i = 0; i < length; i++) {
+			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+		}
+	},
+	
+	getLengthInBits : function() {
+		return this.length;
+	},
+	
+	putBit : function(bit) {
+	
+		var bufIndex = Math.floor(this.length / 8);
+		if (this.buffer.length <= bufIndex) {
+			this.buffer.push(0);
+		}
+	
+		if (bit) {
+			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+		}
+	
+		this.length++;
+	}
+};
+
+module.exports = QRBitBuffer;
+
+};
+mods['QRErrorCorrectLevel']=function(module,exports,require){
+module.exports = {
+	L : 1,
+	M : 0,
+	Q : 3,
+	H : 2
+};
+
+
+};
+mods['QRMaskPattern']=function(module,exports,require){
+module.exports = {
+	PATTERN000 : 0,
+	PATTERN001 : 1,
+	PATTERN010 : 2,
+	PATTERN011 : 3,
+	PATTERN100 : 4,
+	PATTERN101 : 5,
+	PATTERN110 : 6,
+	PATTERN111 : 7
+};
+
+};
+mods['QRMath']=function(module,exports,require){
+var QRMath = {
+
+	glog : function(n) {
+	
+		if (n < 1) {
+			throw new Error("glog(" + n + ")");
+		}
+		
+		return QRMath.LOG_TABLE[n];
+	},
+	
+	gexp : function(n) {
+	
+		while (n < 0) {
+			n += 255;
+		}
+	
+		while (n >= 256) {
+			n -= 255;
+		}
+	
+		return QRMath.EXP_TABLE[n];
+	},
+	
+	EXP_TABLE : new Array(256),
+	
+	LOG_TABLE : new Array(256)
+
+};
+	
+for (var i = 0; i < 8; i++) {
+	QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+		^ QRMath.EXP_TABLE[i - 5]
+		^ QRMath.EXP_TABLE[i - 6]
+		^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+
+module.exports = QRMath;
+
+};
+mods['QRMode']=function(module,exports,require){
+module.exports = {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+
+};
+mods['QRPolynomial']=function(module,exports,require){
+var QRMath = require('./QRMath');
+
+function QRPolynomial(num, shift) {
+	if (num.length === undefined) {
+		throw new Error(num.length + "/" + shift);
+	}
+
+	var offset = 0;
+
+	while (offset < num.length && num[offset] === 0) {
+		offset++;
+	}
+
+	this.num = new Array(num.length - offset + shift);
+	for (var i = 0; i < num.length - offset; i++) {
+		this.num[i] = num[i + offset];
+	}
+}
+
+QRPolynomial.prototype = {
+
+	get : function(index) {
+		return this.num[index];
+	},
+	
+	getLength : function() {
+		return this.num.length;
+	},
+	
+	multiply : function(e) {
+	
+		var num = new Array(this.getLength() + e.getLength() - 1);
+	
+		for (var i = 0; i < this.getLength(); i++) {
+			for (var j = 0; j < e.getLength(); j++) {
+				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+			}
+		}
+	
+		return new QRPolynomial(num, 0);
+	},
+	
+	mod : function(e) {
+	
+		if (this.getLength() - e.getLength() < 0) {
+			return this;
+		}
+	
+		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+	
+		var num = new Array(this.getLength() );
+		
+		for (var i = 0; i < this.getLength(); i++) {
+			num[i] = this.get(i);
+		}
+		
+		for (var x = 0; x < e.getLength(); x++) {
+			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+		}
+	
+		// recursive call
+		return new QRPolynomial(num, 0).mod(e);
+	}
+};
+
+module.exports = QRPolynomial;
+
+};
+mods['QRRSBlock']=function(module,exports,require){
+var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
+
+function QRRSBlock(totalCount, dataCount) {
+	this.totalCount = totalCount;
+	this.dataCount  = dataCount;
+}
+
+QRRSBlock.RS_BLOCK_TABLE = [
+
+	// L
+	// M
+	// Q
+	// H
+
+	// 1
+	[1, 26, 19],
+	[1, 26, 16],
+	[1, 26, 13],
+	[1, 26, 9],
+	
+	// 2
+	[1, 44, 34],
+	[1, 44, 28],
+	[1, 44, 22],
+	[1, 44, 16],
+
+	// 3
+	[1, 70, 55],
+	[1, 70, 44],
+	[2, 35, 17],
+	[2, 35, 13],
+
+	// 4		
+	[1, 100, 80],
+	[2, 50, 32],
+	[2, 50, 24],
+	[4, 25, 9],
+	
+	// 5
+	[1, 134, 108],
+	[2, 67, 43],
+	[2, 33, 15, 2, 34, 16],
+	[2, 33, 11, 2, 34, 12],
+	
+	// 6
+	[2, 86, 68],
+	[4, 43, 27],
+	[4, 43, 19],
+	[4, 43, 15],
+	
+	// 7		
+	[2, 98, 78],
+	[4, 49, 31],
+	[2, 32, 14, 4, 33, 15],
+	[4, 39, 13, 1, 40, 14],
+	
+	// 8
+	[2, 121, 97],
+	[2, 60, 38, 2, 61, 39],
+	[4, 40, 18, 2, 41, 19],
+	[4, 40, 14, 2, 41, 15],
+	
+	// 9
+	[2, 146, 116],
+	[3, 58, 36, 2, 59, 37],
+	[4, 36, 16, 4, 37, 17],
+	[4, 36, 12, 4, 37, 13],
+	
+	// 10		
+	[2, 86, 68, 2, 87, 69],
+	[4, 69, 43, 1, 70, 44],
+	[6, 43, 19, 2, 44, 20],
+	[6, 43, 15, 2, 44, 16],
+
+	// 11
+	[4, 101, 81],
+	[1, 80, 50, 4, 81, 51],
+	[4, 50, 22, 4, 51, 23],
+	[3, 36, 12, 8, 37, 13],
+
+	// 12
+	[2, 116, 92, 2, 117, 93],
+	[6, 58, 36, 2, 59, 37],
+	[4, 46, 20, 6, 47, 21],
+	[7, 42, 14, 4, 43, 15],
+
+	// 13
+	[4, 133, 107],
+	[8, 59, 37, 1, 60, 38],
+	[8, 44, 20, 4, 45, 21],
+	[12, 33, 11, 4, 34, 12],
+
+	// 14
+	[3, 145, 115, 1, 146, 116],
+	[4, 64, 40, 5, 65, 41],
+	[11, 36, 16, 5, 37, 17],
+	[11, 36, 12, 5, 37, 13],
+
+	// 15
+	[5, 109, 87, 1, 110, 88],
+	[5, 65, 41, 5, 66, 42],
+	[5, 54, 24, 7, 55, 25],
+	[11, 36, 12],
+
+	// 16
+	[5, 122, 98, 1, 123, 99],
+	[7, 73, 45, 3, 74, 46],
+	[15, 43, 19, 2, 44, 20],
+	[3, 45, 15, 13, 46, 16],
+
+	// 17
+	[1, 135, 107, 5, 136, 108],
+	[10, 74, 46, 1, 75, 47],
+	[1, 50, 22, 15, 51, 23],
+	[2, 42, 14, 17, 43, 15],
+
+	// 18
+	[5, 150, 120, 1, 151, 121],
+	[9, 69, 43, 4, 70, 44],
+	[17, 50, 22, 1, 51, 23],
+	[2, 42, 14, 19, 43, 15],
+
+	// 19
+	[3, 141, 113, 4, 142, 114],
+	[3, 70, 44, 11, 71, 45],
+	[17, 47, 21, 4, 48, 22],
+	[9, 39, 13, 16, 40, 14],
+
+	// 20
+	[3, 135, 107, 5, 136, 108],
+	[3, 67, 41, 13, 68, 42],
+	[15, 54, 24, 5, 55, 25],
+	[15, 43, 15, 10, 44, 16],
+
+	// 21
+	[4, 144, 116, 4, 145, 117],
+	[17, 68, 42],
+	[17, 50, 22, 6, 51, 23],
+	[19, 46, 16, 6, 47, 17],
+
+	// 22
+	[2, 139, 111, 7, 140, 112],
+	[17, 74, 46],
+	[7, 54, 24, 16, 55, 25],
+	[34, 37, 13],
+
+	// 23
+	[4, 151, 121, 5, 152, 122],
+	[4, 75, 47, 14, 76, 48],
+	[11, 54, 24, 14, 55, 25],
+	[16, 45, 15, 14, 46, 16],
+
+	// 24
+	[6, 147, 117, 4, 148, 118],
+	[6, 73, 45, 14, 74, 46],
+	[11, 54, 24, 16, 55, 25],
+	[30, 46, 16, 2, 47, 17],
+
+	// 25
+	[8, 132, 106, 4, 133, 107],
+	[8, 75, 47, 13, 76, 48],
+	[7, 54, 24, 22, 55, 25],
+	[22, 45, 15, 13, 46, 16],
+
+	// 26
+	[10, 142, 114, 2, 143, 115],
+	[19, 74, 46, 4, 75, 47],
+	[28, 50, 22, 6, 51, 23],
+	[33, 46, 16, 4, 47, 17],
+
+	// 27
+	[8, 152, 122, 4, 153, 123],
+	[22, 73, 45, 3, 74, 46],
+	[8, 53, 23, 26, 54, 24],
+	[12, 45, 15, 28, 46, 16],
+
+	// 28
+	[3, 147, 117, 10, 148, 118],
+	[3, 73, 45, 23, 74, 46],
+	[4, 54, 24, 31, 55, 25],
+	[11, 45, 15, 31, 46, 16],
+
+	// 29
+	[7, 146, 116, 7, 147, 117],
+	[21, 73, 45, 7, 74, 46],
+	[1, 53, 23, 37, 54, 24],
+	[19, 45, 15, 26, 46, 16],
+
+	// 30
+	[5, 145, 115, 10, 146, 116],
+	[19, 75, 47, 10, 76, 48],
+	[15, 54, 24, 25, 55, 25],
+	[23, 45, 15, 25, 46, 16],
+
+	// 31
+	[13, 145, 115, 3, 146, 116],
+	[2, 74, 46, 29, 75, 47],
+	[42, 54, 24, 1, 55, 25],
+	[23, 45, 15, 28, 46, 16],
+
+	// 32
+	[17, 145, 115],
+	[10, 74, 46, 23, 75, 47],
+	[10, 54, 24, 35, 55, 25],
+	[19, 45, 15, 35, 46, 16],
+
+	// 33
+	[17, 145, 115, 1, 146, 116],
+	[14, 74, 46, 21, 75, 47],
+	[29, 54, 24, 19, 55, 25],
+	[11, 45, 15, 46, 46, 16],
+
+	// 34
+	[13, 145, 115, 6, 146, 116],
+	[14, 74, 46, 23, 75, 47],
+	[44, 54, 24, 7, 55, 25],
+	[59, 46, 16, 1, 47, 17],
+
+	// 35
+	[12, 151, 121, 7, 152, 122],
+	[12, 75, 47, 26, 76, 48],
+	[39, 54, 24, 14, 55, 25],
+	[22, 45, 15, 41, 46, 16],
+
+	// 36
+	[6, 151, 121, 14, 152, 122],
+	[6, 75, 47, 34, 76, 48],
+	[46, 54, 24, 10, 55, 25],
+	[2, 45, 15, 64, 46, 16],
+
+	// 37
+	[17, 152, 122, 4, 153, 123],
+	[29, 74, 46, 14, 75, 47],
+	[49, 54, 24, 10, 55, 25],
+	[24, 45, 15, 46, 46, 16],
+
+	// 38
+	[4, 152, 122, 18, 153, 123],
+	[13, 74, 46, 32, 75, 47],
+	[48, 54, 24, 14, 55, 25],
+	[42, 45, 15, 32, 46, 16],
+
+	// 39
+	[20, 147, 117, 4, 148, 118],
+	[40, 75, 47, 7, 76, 48],
+	[43, 54, 24, 22, 55, 25],
+	[10, 45, 15, 67, 46, 16],
+
+	// 40
+	[19, 148, 118, 6, 149, 119],
+	[18, 75, 47, 31, 76, 48],
+	[34, 54, 24, 34, 55, 25],
+	[20, 45, 15, 61, 46, 16]
+];
+
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+	
+	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+	
+	if (rsBlock === undefined) {
+		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+	}
+
+	var length = rsBlock.length / 3;
+	
+	var list = [];
+	
+	for (var i = 0; i < length; i++) {
+
+		var count = rsBlock[i * 3 + 0];
+		var totalCount = rsBlock[i * 3 + 1];
+		var dataCount  = rsBlock[i * 3 + 2];
+
+		for (var j = 0; j < count; j++) {
+			list.push(new QRRSBlock(totalCount, dataCount) );	
+		}
+	}
+	
+	return list;
+};
+
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+
+	switch(errorCorrectLevel) {
+	case QRErrorCorrectLevel.L :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+	case QRErrorCorrectLevel.M :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+	case QRErrorCorrectLevel.Q :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+	case QRErrorCorrectLevel.H :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+	default :
+		return undefined;
+	}
+};
+
+module.exports = QRRSBlock;
+
+};
+mods['QRUtil']=function(module,exports,require){
+var QRMode = require('./QRMode');
+var QRPolynomial = require('./QRPolynomial');
+var QRMath = require('./QRMath');
+var QRMaskPattern = require('./QRMaskPattern');
+
+var QRUtil = {
+
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+
+    getBCHDigit : function(data) {
+
+        var digit = 0;
+
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+
+        return digit;
+    },
+
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+
+    getMask : function(maskPattern, i, j) {
+        
+        switch (maskPattern) {
+            
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+
+        var a = new QRPolynomial([1], 0);
+
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+
+        return a;
+    },
+
+    getLengthInBits : function(mode, type) {
+
+        if (1 <= type && type < 10) {
+
+            // 1 - 9
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 27) {
+
+            // 10 - 26
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 41) {
+
+            // 27 - 40
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+
+    getLostPoint : function(qrCode) {
+        
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+
+        
+        // LEVEL1
+        
+        for (row = 0; row < moduleCount; row++) {
+
+            for (col = 0; col < moduleCount; col++) {
+
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+
+                for (var r = -1; r <= 1; r++) {
+
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+
+                    for (var c = -1; c <= 1; c++) {
+
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+
+        // LEVEL2
+
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+
+        // LEVEL3
+
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        // LEVEL4
+        
+        var darkCount = 0;
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+
+        return lostPoint;       
+    }
+
+};
+
+module.exports = QRUtil;
+
+};
+mods['index']=function(module,exports,require){
+//---------------------------------------------------------------------
+// QRCode for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//   http://www.opensource.org/licenses/mit-license.php
+//
+// The word "QR Code" is registered trademark of 
+// DENSO WAVE INCORPORATED
+//   http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+// Modified to work in node for this project (and some refactoring)
+//---------------------------------------------------------------------
+
+var QR8bitByte = require('./QR8bitByte');
+var QRUtil = require('./QRUtil');
+var QRPolynomial = require('./QRPolynomial');
+var QRRSBlock = require('./QRRSBlock');
+var QRBitBuffer = require('./QRBitBuffer');
+
+function QRCode(typeNumber, errorCorrectLevel) {
+	this.typeNumber = typeNumber;
+	this.errorCorrectLevel = errorCorrectLevel;
+	this.modules = null;
+	this.moduleCount = 0;
+	this.dataCache = null;
+	this.dataList = [];
+}
+
+QRCode.prototype = {
+	
+	addData : function(data) {
+		var newData = new QR8bitByte(data);
+		this.dataList.push(newData);
+		this.dataCache = null;
+	},
+	
+	isDark : function(row, col) {
+		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+			throw new Error(row + "," + col);
+		}
+		return this.modules[row][col];
+	},
+
+	getModuleCount : function() {
+		return this.moduleCount;
+	},
+	
+	make : function() {
+		// Calculate automatically typeNumber if provided is < 1
+		if (this.typeNumber < 1 ){
+			var typeNumber = 1;
+			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+
+				var buffer = new QRBitBuffer();
+				var totalDataCount = 0;
+				for (var i = 0; i < rsBlocks.length; i++) {
+					totalDataCount += rsBlocks[i].dataCount;
+				}
+
+				for (var x = 0; x < this.dataList.length; x++) {
+					var data = this.dataList[x];
+					buffer.put(data.mode, 4);
+					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+					data.write(buffer);
+				}
+				if (buffer.getLengthInBits() <= totalDataCount * 8)
+					break;
+			}
+			this.typeNumber = typeNumber;
+		}
+		this.makeImpl(false, this.getBestMaskPattern() );
+	},
+	
+	makeImpl : function(test, maskPattern) {
+		
+		this.moduleCount = this.typeNumber * 4 + 17;
+		this.modules = new Array(this.moduleCount);
+		
+		for (var row = 0; row < this.moduleCount; row++) {
+			
+			this.modules[row] = new Array(this.moduleCount);
+			
+			for (var col = 0; col < this.moduleCount; col++) {
+				this.modules[row][col] = null;//(col + row) % 3;
+			}
+		}
+	
+		this.setupPositionProbePattern(0, 0);
+		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+		this.setupPositionProbePattern(0, this.moduleCount - 7);
+		this.setupPositionAdjustPattern();
+		this.setupTimingPattern();
+		this.setupTypeInfo(test, maskPattern);
+		
+		if (this.typeNumber >= 7) {
+			this.setupTypeNumber(test);
+		}
+	
+		if (this.dataCache === null) {
+			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+		}
+	
+		this.mapData(this.dataCache, maskPattern);
+	},
+
+	setupPositionProbePattern : function(row, col)  {
+		
+		for (var r = -1; r <= 7; r++) {
+			
+			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+			
+			for (var c = -1; c <= 7; c++) {
+				
+				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+				
+				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+					this.modules[row + r][col + c] = true;
+				} else {
+					this.modules[row + r][col + c] = false;
+				}
+			}		
+		}		
+	},
+	
+	getBestMaskPattern : function() {
+	
+		var minLostPoint = 0;
+		var pattern = 0;
+	
+		for (var i = 0; i < 8; i++) {
+			
+			this.makeImpl(true, i);
+	
+			var lostPoint = QRUtil.getLostPoint(this);
+	
+			if (i === 0 || minLostPoint >  lostPoint) {
+				minLostPoint = lostPoint;
+				pattern = i;
+			}
+		}
+	
+		return pattern;
+	},
+	
+	createMovieClip : function(target_mc, instance_name, depth) {
+	
+		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		var cs = 1;
+	
+		this.make();
+
+		for (var row = 0; row < this.modules.length; row++) {
+			
+			var y = row * cs;
+			
+			for (var col = 0; col < this.modules[row].length; col++) {
+	
+				var x = col * cs;
+				var dark = this.modules[row][col];
+			
+				if (dark) {
+					qr_mc.beginFill(0, 100);
+					qr_mc.moveTo(x, y);
+					qr_mc.lineTo(x + cs, y);
+					qr_mc.lineTo(x + cs, y + cs);
+					qr_mc.lineTo(x, y + cs);
+					qr_mc.endFill();
+				}
+			}
+		}
+		
+		return qr_mc;
+	},
+
+	setupTimingPattern : function() {
+		
+		for (var r = 8; r < this.moduleCount - 8; r++) {
+			if (this.modules[r][6] !== null) {
+				continue;
+			}
+			this.modules[r][6] = (r % 2 === 0);
+		}
+	
+		for (var c = 8; c < this.moduleCount - 8; c++) {
+			if (this.modules[6][c] !== null) {
+				continue;
+			}
+			this.modules[6][c] = (c % 2 === 0);
+		}
+	},
+	
+	setupPositionAdjustPattern : function() {
+	
+		var pos = QRUtil.getPatternPosition(this.typeNumber);
+		
+		for (var i = 0; i < pos.length; i++) {
+		
+			for (var j = 0; j < pos.length; j++) {
+			
+				var row = pos[i];
+				var col = pos[j];
+				
+				if (this.modules[row][col] !== null) {
+					continue;
+				}
+				
+				for (var r = -2; r <= 2; r++) {
+				
+					for (var c = -2; c <= 2; c++) {
+					
+						if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+							this.modules[row + r][col + c] = true;
+						} else {
+							this.modules[row + r][col + c] = false;
+						}
+					}
+				}
+			}
+		}
+	},
+	
+	setupTypeNumber : function(test) {
+	
+		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+	
+		for (var i = 0; i < 18; i++) {
+			mod = (!test && ( (bits >> i) & 1) === 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+	
+		for (var x = 0; x < 18; x++) {
+			mod = (!test && ( (bits >> x) & 1) === 1);
+			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+		}
+	},
+	
+	setupTypeInfo : function(test, maskPattern) {
+	
+		var data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+	
+		// vertical		
+		for (var v = 0; v < 15; v++) {
+	
+			mod = (!test && ( (bits >> v) & 1) === 1);
+	
+			if (v < 6) {
+				this.modules[v][8] = mod;
+			} else if (v < 8) {
+				this.modules[v + 1][8] = mod;
+			} else {
+				this.modules[this.moduleCount - 15 + v][8] = mod;
+			}
+		}
+	
+		// horizontal
+		for (var h = 0; h < 15; h++) {
+	
+			mod = (!test && ( (bits >> h) & 1) === 1);
+			
+			if (h < 8) {
+				this.modules[8][this.moduleCount - h - 1] = mod;
+			} else if (h < 9) {
+				this.modules[8][15 - h - 1 + 1] = mod;
+			} else {
+				this.modules[8][15 - h - 1] = mod;
+			}
+		}
+	
+		// fixed module
+		this.modules[this.moduleCount - 8][8] = (!test);
+	
+	},
+	
+	mapData : function(data, maskPattern) {
+		
+		var inc = -1;
+		var row = this.moduleCount - 1;
+		var bitIndex = 7;
+		var byteIndex = 0;
+		
+		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+	
+			if (col === 6) col--;
+	
+			while (true) {
+	
+				for (var c = 0; c < 2; c++) {
+					
+					if (this.modules[row][col - c] === null) {
+						
+						var dark = false;
+	
+						if (byteIndex < data.length) {
+							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+						}
+	
+						var mask = QRUtil.getMask(maskPattern, row, col - c);
+	
+						if (mask) {
+							dark = !dark;
+						}
+						
+						this.modules[row][col - c] = dark;
+						bitIndex--;
+	
+						if (bitIndex === -1) {
+							byteIndex++;
+							bitIndex = 7;
+						}
+					}
+				}
+								
+				row += inc;
+	
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
+					inc = -inc;
+					break;
+				}
+			}
+		}
+		
+	}
+
+};
+
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+	
+	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+	
+	var buffer = new QRBitBuffer();
+	
+	for (var i = 0; i < dataList.length; i++) {
+		var data = dataList[i];
+		buffer.put(data.mode, 4);
+		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+		data.write(buffer);
+	}
+
+	// calc num max data.
+	var totalDataCount = 0;
+	for (var x = 0; x < rsBlocks.length; x++) {
+		totalDataCount += rsBlocks[x].dataCount;
+	}
+
+	if (buffer.getLengthInBits() > totalDataCount * 8) {
+		throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+	}
+
+	// end code
+	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+		buffer.put(0, 4);
+	}
+
+	// padding
+	while (buffer.getLengthInBits() % 8 !== 0) {
+		buffer.putBit(false);
+	}
+
+	// padding
+	while (true) {
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD0, 8);
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD1, 8);
+	}
+
+	return QRCode.createBytes(buffer, rsBlocks);
+};
+
+QRCode.createBytes = function(buffer, rsBlocks) {
+
+	var offset = 0;
+	
+	var maxDcCount = 0;
+	var maxEcCount = 0;
+	
+	var dcdata = new Array(rsBlocks.length);
+	var ecdata = new Array(rsBlocks.length);
+	
+	for (var r = 0; r < rsBlocks.length; r++) {
+
+		var dcCount = rsBlocks[r].dataCount;
+		var ecCount = rsBlocks[r].totalCount - dcCount;
+
+		maxDcCount = Math.max(maxDcCount, dcCount);
+		maxEcCount = Math.max(maxEcCount, ecCount);
+		
+		dcdata[r] = new Array(dcCount);
+		
+		for (var i = 0; i < dcdata[r].length; i++) {
+			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+		}
+		offset += dcCount;
+		
+		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+		var modPoly = rawPoly.mod(rsPoly);
+		ecdata[r] = new Array(rsPoly.getLength() - 1);
+		for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+		}
+
+	}
+	
+	var totalCodeCount = 0;
+	for (var y = 0; y < rsBlocks.length; y++) {
+		totalCodeCount += rsBlocks[y].totalCount;
+	}
+
+	var data = new Array(totalCodeCount);
+	var index = 0;
+
+	for (var z = 0; z < maxDcCount; z++) {
+		for (var s = 0; s < rsBlocks.length; s++) {
+			if (z < dcdata[s].length) {
+				data[index++] = dcdata[s][z];
+			}
+		}
+	}
+
+	for (var xx = 0; xx < maxEcCount; xx++) {
+		for (var t = 0; t < rsBlocks.length; t++) {
+			if (xx < ecdata[t].length) {
+				data[index++] = ecdata[t][xx];
+			}
+		}
+	}
+
+	return data;
+
+};
+
+module.exports = QRCode;
+
+};
+return {QRCode:req('index'),ECL:req('QRErrorCorrectLevel')};})();
+</script>
+<script>
+(function(){
+'use strict';
+/* ---------- master data ---------- */
+var VETS=[{id:'v1',name:'น.สพ.ธนกร'},{id:'v2',name:'สพ.ญ.พิมพ์ชนก'}];
+var SERVICES=[
+  {id:'checkup',name:'ตรวจรักษาทั่วไป',amt:300,price:'300 บาท'},
+  {id:'vaccine',name:'แพ็กเกจวัคซีนพื้นฐาน',amt:1200,price:'1,200 บาท'},
+  {id:'annual',name:'แพ็กเกจตรวจสุขภาพ + วัคซีนครบชุด',amt:2000,price:'2,000 บาท'},
+  {id:'nail',name:'ตัดเล็บ-เช็ดหู',amt:150,price:'150 บาท'}
+];
+var ME={name:'คุณนภัส',phone:'081-234-5678'};
+var MY_PETS=[{id:'p1',name:'ถั่วแดง',type:'แมว',info:'แมว · 2 ปี'},{id:'p2',name:'ข้าวปั้น',type:'สุนัข',info:'สุนัข · 8 เดือน'}];
+var TH_DAY=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+var TH_DAY_FULL=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+var TH_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+var STATUS={booked:'รอตรวจ',checkedin:'เช็กอินแล้ว',inroom:'กำลังตรวจ',done:'ตรวจเสร็จ',cancelled:'ยกเลิก',noshow:'ไม่มาตามนัด'};
+var CANCEL_LIMIT_MIN=60;
+
+/* ---------- date helpers ---------- */
+function pad(n){return String(n).padStart(2,'0');}
+function keyOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function dayKey(off){var d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+off);return keyOf(d);}
+function parseKey(k){var p=k.split('-').map(Number);return new Date(p[0],p[1]-1,p[2],12);}
+function fmtDate(k,full){var d=parseKey(k);return full?('วัน'+TH_DAY_FULL[d.getDay()]+'ที่ '+d.getDate()+' '+TH_MON[d.getMonth()]):(TH_DAY[d.getDay()]+' '+d.getDate()+' '+TH_MON[d.getMonth()]);}
+function nowHM(){var d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes());}
+function addMin(hm,m){var p=hm.split(':').map(Number);var t=p[0]*60+p[1]+m;return pad(Math.floor(t/60))+':'+pad(t%60);}
+function slotTime(k,hm){var p=k.split('-').map(Number),q=hm.split(':').map(Number);return new Date(p[0],p[1]-1,p[2],q[0],q[1]);}
+function ago(ts){var m=Math.round((Date.now()-ts)/60000);if(m<1)return 'เมื่อสักครู่';if(m<60)return m+' นาทีที่แล้ว';var h=Math.round(m/60);if(h<24)return h+' ชม.ที่แล้ว';return Math.round(h/24)+' วันที่แล้ว';}
+var SLOTS=(function(){var a=[];for(var h=9;h<18;h++){if(h===12)continue;a.push(pad(h)+':00',pad(h)+':30');}return a;})();
+var DAYS=[0,1,2,3,4,5,6].map(dayKey);
+function today(){return dayKey(0);}
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function vetName(id){var v=VETS.find(function(x){return x.id===id;});return v?v.name:'-';}
+function svc(id){return SERVICES.find(function(s){return s.id===id;})||{name:'-',price:'',amt:0};}
+function baht(n){return Number(n||0).toLocaleString('en-US')+' บาท';}
+function bprice(b){return b.amt!=null?b.amt:svc(b.service).amt;}
+
+/* ---------- storage ---------- */
+var KEY='pukpui-queue-v1';
+function load(){try{var raw=localStorage.getItem(KEY);if(raw){var s=JSON.parse(raw);if(s&&Array.isArray(s.bookings))return s;}}catch(e){}return null;}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function mk(s,o){s.seq++;var d=parseKey(o.date);o.id='b'+s.seq;o.code='PP'+pad(d.getMonth()+1)+pad(d.getDate())+'-'+String(s.seq).padStart(3,'0');return o;}
+function seed(){
+  var s={bookings:[],closed:{},notifs:[],seq:0},n=nowHM();
+  var rows=[
+    [0,'09:00','v1','คุณสมชาย','มะลิ','สุนัข','vaccine'],[0,'09:30','v2','คุณกานต์','โมจิ','แมว','checkup'],
+    [0,'10:00','v1','คุณปราง','ทองหยิบ','แมว','annual'],[0,'10:00','v2','คุณต้น','บราวนี่','สุนัข','checkup'],
+    [0,'11:00','v2','คุณแพร','ซูชิ','แมว','nail'],[0,'13:30','v1','คุณฝน','ส้มโอ','แมว','vaccine'],
+    [0,'14:00','v2','คุณเจ','ลาเต้','สุนัข','checkup'],[0,'15:00','v1','คุณบีม','ขนมปัง','สุนัข','annual'],
+    [0,'15:00','v2','คุณมุก','ปุยฝ้าย','แมว','vaccine'],[0,'16:30','v1','คุณโอ๊ต','ช็อกโก้','สุนัข','checkup'],
+    [1,'09:00','v1','คุณหน่อย','เผือก','แมว','checkup'],[1,'09:00','v2','คุณเอก','ถุงทอง','สุนัข','vaccine'],
+    [1,'10:30','v1','คุณจอย','มิโซะ','แมว','vaccine'],[1,'13:00','v1','คุณกอล์ฟ','บัตเตอร์','สุนัข','annual'],
+    [1,'13:00','v2','คุณนิว','โอริโอ้','แมว','checkup'],[1,'14:30','v2','คุณฟ้า','ข้าวเหนียว','แมว','nail'],
+    [2,'10:00','v2','คุณตาล','ภูผา','สุนัข','checkup'],[2,'11:00','v1','คุณแนน','ไข่ตุ๋น','แมว','vaccine'],
+    [3,'09:30','v1','คุณภูมิ','ซีอิ๊ว','สุนัข','vaccine']
+  ];
+  rows.forEach(function(r){
+    var status='booked';
+    if(r[0]===0){ if(addMin(r[1],30)<=n) status='done'; else if(r[1]<=n) status='inroom'; }
+    s.bookings.push(mk(s,{date:dayKey(r[0]),time:r[1],vet:r[2],owner:r[3],pet:r[4],type:r[5],service:r[6],status:status,createdAt:Date.now()-86400000}));
+  });
+  s.bookings.push(mk(s,{date:dayKey(1),time:'11:30',vet:'v1',owner:ME.name,pet:'ข้าวปั้น',type:'สุนัข',petId:'p2',service:'annual',amt:2000,status:'booked',mine:true,createdAt:Date.now()-3*3600000}));
+  s.closed[dayKey(2)]={all:false,times:['16:00','16:30','17:00','17:30']};
+  s.closed[dayKey(5)]={all:true,times:[]};
+  s.notifs=[
+    {id:'n2',kind:'new',text:'จองใหม่: ภูผา (สุนัข) · ตรวจรักษาทั่วไป',sub:fmtDate(dayKey(2))+' 10:00 น. · สพ.ญ.พิมพ์ชนก · คุณตาล',at:Date.now()-25*60000,read:false},
+    {id:'n1',kind:'new',text:'จองใหม่: ข้าวปั้น (สุนัข) · แพ็กเกจตรวจสุขภาพ + วัคซีนครบชุด',sub:fmtDate(dayKey(1))+' 11:30 น. · น.สพ.ธนกร · '+ME.name+' · 2,000 บาท',at:Date.now()-3*3600000,read:true}
+  ];
+  return s;
+}
+var S=load();
+if(!S||!S.bookings.some(function(b){return b.date>=today();})){S=seed();save();}
+
+/* ---------- business rules ---------- */
+function isPast(date,time){var t=today();if(date<t)return true;if(date>t)return false;return time<=nowHM();}
+function closedInfo(date){return S.closed[date]||{all:false,times:[]};}
+function takenVets(date,time){return S.bookings.filter(function(b){return b.date===date&&b.time===time&&b.status!=='cancelled';}).map(function(b){return b.vet;});}
+function slotInfo(date,time,pref){
+  var c=closedInfo(date);
+  if(c.all||c.times.indexOf(time)>=0)return {state:'closed',free:[]};
+  if(isPast(date,time))return {state:'past',free:[]};
+  var taken=takenVets(date,time);
+  var free=VETS.map(function(v){return v.id;}).filter(function(id){return taken.indexOf(id)<0;});
+  if(pref&&pref!=='any')free=free.filter(function(id){return id===pref;});
+  return {state:free.length?'open':'full',free:free};
+}
+function openCount(date,pref){return SLOTS.filter(function(t){return slotInfo(date,t,pref).state==='open';}).length;}
+function canCancel(b){return (slotTime(b.date,b.time)-Date.now())/60000>CANCEL_LIMIT_MIN && (b.status==='booked');}
+function notify(kind,b){
+  var t=(kind==='new'?'จองใหม่: ':'ลูกค้ายกเลิกนัด: ')+b.pet+' ('+b.type+') · '+svc(b.service).name;
+  var sub=fmtDate(b.date)+' '+b.time+' น. · '+vetName(b.vet)+' · '+b.owner;
+  S.notifs.unshift({id:'n'+Date.now()+Math.random().toString(36).slice(2,6),kind:kind,text:t,sub:sub,at:Date.now(),read:false,bid:b.id});
+  S.notifs=S.notifs.slice(0,40);
+}
+
+
+/* ---------- characters (original ปุกปุย art) ---------- */
+var uid=0;
+var BG=['#CDEFF3','#FBE3D0','#E3F1D4','#FFF0B8','#E6E1F5'];
+var CATS=[{fur:'#F2A65A',stripe:'#D9823A'},{fur:'#BDBCC2'},{fur:'#4A4650',eye:'#F3D34A',line:'#D9D3E0'},{fur:'#FFFFFF',patch:'#F2A65A',patch2:'#4A4650'},{fur:'#E8D3B5',mask:'#7A5C46'}];
+var DOGS=[{fur:'#FFFFFF',ear:'#E6D6C2'},{fur:'#D9A066',ear:'#8A5A34'},{fur:'#9C9AA3',fluffy:true},{fur:'#EBC58F',ear:'#C99355'},{fur:'#5B4A42',ear:'#3B2F2A',snout:'#C9A27E'}];
+function hash(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h);}
+function face(o){
+  var line=o.line||'#3B3530',eye=o.eye;
+  var e=eye?'<circle cx="40" cy="46" r="3.6" fill="'+eye+'"/><circle cx="60" cy="46" r="3.6" fill="'+eye+'"/><circle cx="40" cy="46" r="1.5" fill="#222"/><circle cx="60" cy="46" r="1.5" fill="#222"/>'
+              :'<circle cx="40" cy="46" r="2.8" fill="#3B3530"/><circle cx="60" cy="46" r="2.8" fill="#3B3530"/><circle cx="41" cy="45" r=".9" fill="#fff"/><circle cx="61" cy="45" r=".9" fill="#fff"/>';
+  return e+'<circle cx="33" cy="54" r="4.2" fill="#F59A9A" opacity=".45"/><circle cx="67" cy="54" r="4.2" fill="#F59A9A" opacity=".45"/>'+
+    '<path d="M48.2 50.5h3.6l-1.8 2z" fill="#E68686"/><path d="M46 53.5q2 2.6 4 0q2 2.6 4 0" stroke="'+line+'" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+}
+function catSVG(v){
+  var inner='#F6BDBD',l=v.line||'#3B3530';
+  var g='<ellipse cx="50" cy="104" rx="34" ry="27" fill="'+v.fur+'"/>'+
+    '<path d="M23 38L21 9L45 23Z" fill="'+(v.patch2||v.fur)+'"/><path d="M77 38L79 9L55 23Z" fill="'+(v.patch||v.fur)+'"/>'+
+    '<path d="M26.5 31L25.5 16L38 24Z" fill="'+inner+'"/><path d="M73.5 31L74.5 16L62 24Z" fill="'+inner+'"/>'+
+    '<ellipse cx="50" cy="46" rx="29" ry="25" fill="'+v.fur+'"/>';
+  if(v.patch)g+='<path d="M54 21.5C66 22 77 30 78.8 43C70 41 60 35 54 27Z" fill="'+v.patch+'"/><path d="M46 21.5C36 22 25 29 21.8 39C29 37 39 32 44 26Z" fill="'+v.patch2+'"/>';
+  if(v.mask)g+='<ellipse cx="50" cy="55" rx="11" ry="8" fill="'+v.mask+'" opacity=".55"/>';
+  if(v.stripe)g+='<path d="M43 23.5l2 6.5M50 22v7.5M57 23.5l-2 6.5M22.5 44h6M71.5 44h6" stroke="'+v.stripe+'" stroke-width="3" stroke-linecap="round"/>';
+  g+=face(v)+'<g stroke="'+l+'" stroke-width="1.2" opacity=".55" stroke-linecap="round"><path d="M31 51L17 49M31 55L18 58M69 51L83 49M69 55L82 58"/></g>';
+  return g;
+}
+function dogSVG(v){
+  var g='<ellipse cx="50" cy="106" rx="34" ry="28" fill="'+v.fur+'"/>';
+  if(v.fluffy){
+    var c='';for(var i=0;i<12;i++){var a=i/12*Math.PI*2;c+='<circle cx="'+(50+Math.cos(a)*24).toFixed(1)+'" cy="'+(46+Math.sin(a)*22).toFixed(1)+'" r="10" fill="'+v.fur+'"/>';}
+    g+=c+'<circle cx="23" cy="52" r="10" fill="'+v.fur+'"/><circle cx="77" cy="52" r="10" fill="'+v.fur+'"/><circle cx="21" cy="62" r="8" fill="'+v.fur+'"/><circle cx="79" cy="62" r="8" fill="'+v.fur+'"/>'+
+      '<ellipse cx="50" cy="47" rx="25" ry="23" fill="'+v.fur+'"/><ellipse cx="50" cy="48" rx="19" ry="17" fill="#B4B2BA"/>';
+  }else{
+    g+='<ellipse cx="50" cy="47" rx="27" ry="25" fill="'+v.fur+'"/>'+
+      '<ellipse cx="25" cy="45" rx="9" ry="17" transform="rotate(20 25 45)" fill="'+v.ear+'"/><ellipse cx="75" cy="45" rx="9" ry="17" transform="rotate(-20 75 45)" fill="'+v.ear+'"/>';
+  }
+  g+='<ellipse cx="50" cy="56.5" rx="11.5" ry="8.5" fill="'+(v.snout||'#FFF8EE')+'"/>'+
+    '<circle cx="40" cy="44" r="2.8" fill="#3B3530"/><circle cx="60" cy="44" r="2.8" fill="#3B3530"/><circle cx="41" cy="43" r=".9" fill="#fff"/><circle cx="61" cy="43" r=".9" fill="#fff"/>'+
+    '<circle cx="32" cy="53" r="4" fill="#F59A9A" opacity=".45"/><circle cx="68" cy="53" r="4" fill="#F59A9A" opacity=".45"/>'+
+    '<ellipse cx="50" cy="52.5" rx="4" ry="3" fill="#3B3530"/><path d="M50 55.5v2.2M46 57.5q4 3 8 0" stroke="#3B3530" stroke-width="1.5" fill="none" stroke-linecap="round"/>'+
+    '<path d="M47.6 59.3h4.8v2.4a2.4 2.4 0 0 1-4.8 0z" fill="#F07C8A"/>';
+  return g;
+}
+function mascotSVG(){
+  var v={fur:'#FFFFFF'},c='';
+  for(var i=0;i<12;i++){var a=i/12*Math.PI*2;c+='<circle cx="'+(50+Math.cos(a)*25).toFixed(1)+'" cy="'+(50+Math.sin(a)*23).toFixed(1)+'" r="11" fill="#fff"/>';}
+  return '<ellipse cx="50" cy="108" rx="36" ry="28" fill="#fff"/>'+c+
+    '<ellipse cx="22" cy="54" rx="10" ry="15" fill="#F3E6D6"/><ellipse cx="78" cy="54" rx="10" ry="15" fill="#F3E6D6"/>'+
+    '<ellipse cx="50" cy="51" rx="26" ry="24" fill="#fff"/>'+
+    '<path d="M35 25a15 9 0 0 1 30 0v3H35z" fill="#3FAFAA"/><rect x="34" y="26" width="32" height="5" rx="2.5" fill="#2A8C87"/><path d="M48.5 16.5h3v3h3v3h-3v3h-3v-3h-3v-3h3z" fill="#fff"/>'+
+    '<path d="M37 47q3-3 6 0M57 47q3-3 6 0" stroke="#3B3530" stroke-width="2.2" fill="none" stroke-linecap="round"/>'+
+    '<circle cx="33" cy="56" r="4.5" fill="#F59A9A" opacity=".5"/><circle cx="67" cy="56" r="4.5" fill="#F59A9A" opacity=".5"/>'+
+    '<ellipse cx="50" cy="54" rx="4" ry="3" fill="#3B3530"/><path d="M50 57v2M46 59q4 3 8 0" stroke="#3B3530" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M47.6 60.8h4.8v2.6a2.4 2.4 0 0 1-4.8 0z" fill="#F07C8A"/>';
+}
+function wrap(inner,size,bg){var id='av'+(uid++);return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 100 100" aria-hidden="true" style="flex:none;display:block"><defs><clipPath id="'+id+'"><circle cx="50" cy="50" r="50"/></clipPath></defs><g clip-path="url(#'+id+')"><rect width="100" height="100" fill="'+bg+'"/>'+inner+'</g></svg>';}
+function petAv(name,type,size){
+  var h=hash(name||'x'),bg=BG[h%BG.length];
+  if(name==='ถั่วแดง')return wrap(catSVG(CATS[0]),size,'#FBE3D0');
+  if(name==='ข้าวปั้น')return wrap(dogSVG(DOGS[0]),size,'#CDEFF3');
+  if(type==='แมว')return wrap(catSVG(CATS[h%CATS.length]),size,bg);
+  return wrap(dogSVG(DOGS[h%DOGS.length]),size,bg);
+}
+function mascot(size,bg){return wrap(mascotSVG(),size,bg||'#CDEFF3');}
+
+/* ---------- icons ---------- */
+function ic(p,s){return '<svg width="'+(s||24)+'" height="'+(s||24)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';}
+var IC={
+  home:ic('<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'),
+  book:ic('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M12 13v5M9.5 15.5h5"/>'),
+  list:ic('<rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>'),
+  shop:ic('<path d="M4 9l1.5-5h13L20 9M4 9h16M4 9v11h16V9M9 20v-6h6v6"/>'),
+  back:ic('<path d="M15 5l-7 7 7 7"/>'),
+  bell:ic('<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/>'),
+  check2:ic('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',18),
+  chat:ic('<path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01"/>',20),
+  ticket:ic('<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v2M14 11v2M14 16v1"/>'),
+  out:ic('<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10"/>',22),
+  lock:ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',15),
+  clock:ic('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',20),
+  phone:ic('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',20),
+  alert:ic('<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>',18),
+  steth:ic('<path d="M6 3v6a5 5 0 0 0 10 0V3M11 14v2a4 4 0 0 0 8 0v-2"/><circle cx="19" cy="12" r="2"/>',20),
+  syringe:ic('<path d="M18 2l4 4M17 7l3-3M19 9L9 19l-4 1 1-4L16 6zM12 8l4 4M5 19l-3 3"/>',20),
+  heart:ic('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',20),
+  scissors:ic('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>',20)
+};
+var SVC_IC={checkup:IC.steth,vaccine:IC.syringe,annual:IC.heart,nail:IC.scissors};
+
+/* ---------- UI state ---------- */
+var SKEY='pukpui-session',role=null;
+try{role=sessionStorage.getItem(SKEY);}catch(e){}
+function setRole(r){role=r;try{if(r)sessionStorage.setItem(SKEY,r);else sessionStorage.removeItem(SKEY);}catch(e){}}
+var view=!role?'login':(role==='staff'?'clinic':'home');
+var loginTab=(location.hash==='#clinic')?'staff':'customer',loginErr='';
+function norm(){S.cnotifs=S.cnotifs||[];S.reminded=S.reminded||{};S.line=S.line||{connected:false,msgs:[]};
+  if(!S.myPets)S.myPets=[
+    {id:'p1',name:'ถั่วแดง',type:'แมว',breed:'อเมริกันชอร์ตแฮร์',sex:'เพศเมีย',age:'2 ปี',weight:'4.2',neutered:'ทำหมันแล้ว',allergy:'ไม่มี',disease:'ไม่มี',vaccines:'วัคซีนรวมแมว, พิษสุนัขบ้า',updatedAt:Date.now()-20*86400000},
+    {id:'p2',name:'ข้าวปั้น',type:'สุนัข',breed:'ปอมเมอเรเนียน',sex:'เพศผู้',age:'8 เดือน',weight:'',neutered:'',allergy:'',disease:'',vaccines:''}];}
+var PF_REQ=['name','type','breed','sex','age','weight','neutered','allergy','disease'];
+function myPets(){return S.myPets;}
+function pInfo(p){return p.type+(p.age?' · '+p.age:'');}
+function pDone(p){return PF_REQ.every(function(f){return p[f]&&String(p[f]).trim();});}
+norm();
+var ROOM={v1:'ห้องตรวจ 1',v2:'ห้องตรวจ 2'};
+function bnum(b){return parseInt(String(b.id).slice(1),10)||0;}
+function dayList(d){return S.bookings.filter(function(x){return x.date===d;}).sort(function(a,b){return a.time.localeCompare(b.time)||a.vet.localeCompare(b.vet)||bnum(a)-bnum(b);});}
+function qNo(b){var l=dayList(b.date);for(var i=0;i<l.length;i++)if(l[i].id===b.id)return pad(i+1);return '--';}
+function isActive(st){return st==='booked'||st==='checkedin'||st==='inroom';}
+function aheadOf(b){return S.bookings.filter(function(x){return x.date===b.date&&x.vet===b.vet&&x.id!==b.id&&isActive(x.status)&&x.time<b.time;}).length;}
+function servingQ(b){var x=S.bookings.find(function(y){return y.date===b.date&&y.vet===b.vet&&y.status==='inroom';});return x?qNo(x):null;}
+function lineOn(){return !!(S.line&&S.line.connected);}
+function linePush(kind,b,text){if(!lineOn())return;S.line.msgs.push({id:'l'+Date.now()+Math.random().toString(36).slice(2,5),kind:kind,text:text,bid:b?b.id:null,at:Date.now()});S.line.msgs=S.line.msgs.slice(-60);}
+function cnotify(kind,b,text){linePush(kind,b,text);S.cnotifs.unshift({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),kind:kind,text:text,sub:fmtDate(b.date)+' '+b.time+' น. · '+svc(b.service).name+' · '+vetName(b.vet),at:Date.now(),read:false,pet:b.pet,type:b.type});S.cnotifs=S.cnotifs.slice(0,40);}
+function checkReminders(){
+  var t=today(),tm=dayKey(1),ch=false;
+  S.bookings.forEach(function(b){
+    if(!b.mine||b.status!=='booked')return;
+    var k=b.date===tm?'tomorrow':(b.date===t?'today':null);if(!k)return;
+    var key=b.id+':'+k;if(S.reminded[key])return;S.reminded[key]=1;ch=true;
+    cnotify('remind',b,'เตือนนัด: '+(k==='today'?'วันนี้':'พรุ่งนี้')+' '+b.time+' น. '+b.pet+'มีนัดที่ปุกปุย');
+  });
+  S.bookings.forEach(function(b){
+    if(!b.mine||b.date!==t||(b.status!=='booked'&&b.status!=='checkedin'))return;
+    if(aheadOf(b)===1&&!S.reminded[b.id+':near']){S.reminded[b.id+':near']=1;ch=true;cnotify('near',b,'อีก 1 คิวจะถึง'+b.pet+' เตรียมตัวได้เลย');}
+  });
+  if(ch)save();
+}
+function cUnread(){return S.cnotifs.filter(function(n){return !n.read;}).length;}
+var ticketId=null,pushSeen=-1,pushT=null;
+var step=1,ctab='queue',cdate=today(),lastNew=null,doneId=null;
+var sel={pet:null,service:null,vet:'any',date:null,time:null,note:''};
+function firstOpenDay(){return DAYS.find(function(k){return openCount(k,sel.vet)>0;})||DAYS[0];}
+sel.date=firstOpenDay();
+var formErr='',formInfo='';
+var screenEl=document.getElementById('screen'),barEl=document.getElementById('bar'),modal=document.getElementById('modal');
+
+function appbar(title,o){o=o||{};
+  return '<header class="appbar"><div class="ab-left">'+(o.back?'<button class="icon-btn" data-act="'+o.back+'" aria-label="ย้อนกลับ">'+IC.back+'</button>':(o.left||'<span class="logo">'+mascot(34)+'</span>'))+'</div>'+
+    '<h1>'+title+'</h1><div class="ab-right">'+(o.right||'')+'</div></header>';
+}
+function upcomingMine(){return S.bookings.filter(function(b){return b.mine&&b.date>=today()&&isActive(b.status);}).sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time);});}
+
+/* ---------- screens ---------- */
+function homeScreen(){
+  var next=upcomingMine()[0];
+  var friends=[['มะลิ','สุนัข'],['โมจิ','แมว'],['บราวนี่','สุนัข'],['ซูชิ','แมว'],['ลาเต้','สุนัข'],['ปุยฝ้าย','แมว']].map(function(p){return petAv(p[0],p[1],52);}).join('');
+  var card=next?'<button class="card appt-card" data-act="ticket" data-v="'+next.id+'"><div class="ac-top"><span class="tag">นัดถัดไป</span><span class="code">'+next.code+'</span></div><div class="ac-main">'+petAv(next.pet,next.type,54)+'<div><b class="tnum">'+fmtDate(next.date)+' · '+next.time+' น.</b><span>'+esc(next.pet)+' · '+esc(svc(next.service).name)+'</span><span>'+esc(vetName(next.vet))+'</span></div></div>'+miniLive(next)+'</button>'
+    :'<div class="card empty-card">'+mascot(48,'#FFF0B8')+'<span>ยังไม่มีนัดเลย จองคิวให้น้องได้ที่ปุ่มด้านล่าง</span></div>';
+  var pets=myPets().map(function(p){var ok=pDone(p);return '<button class="pet-chip" data-act="pet-open" data-v="'+p.id+'">'+petAv(p.name,p.type,40)+'<div><b>'+esc(p.name)+'</b><span class="'+(ok?'pok':'pwarn')+'">'+(ok?'ประวัติครบแล้ว':'กรอกประวัติให้ครบ')+'</span></div></button>';}).join('')+
+    '<button class="pet-chip add" data-act="pet-new"><span class="addic">+</span><div><b>เพิ่มน้อง</b><span>กรอกครั้งเดียว</span></div></button>';
+  var tg=next?(next.date===today()?'วันนี้':(next.date===dayKey(1)?'พรุ่งนี้':'นัดถัดไป')):'';
+  card=card.replace('<span class="tag">นัดถัดไป</span>','<span class="tag">'+tg+'</span>');
+  return appbar('ปุกปุย คลินิก',{right:'<button class="icon-btn" data-act="logout-ask" aria-label="ออกจากระบบ">'+IC.out+'</button>'})+
+  '<section class="hero"><div class="hero-top"><div><p class="hi">สวัสดี '+ME.name+'</p><h2>วันนี้น้องๆ สบายดีไหม?</h2><p class="sub">จองคิวหาหมอได้ทุกที่ ไม่ต้องโทร</p></div><div class="hero-mascot">'+mascot(92,'#FFF4D2')+'</div></div><div class="friends">'+friends+'</div></section>'+
+  '<div class="pad">'+card+
+   '<button class="cta mt" data-act="start">จองคิวใหม่</button><div style="margin-top:14px">'+lineCard()+'</div>'+
+   '<h3 class="sec">สัตว์เลี้ยงของฉัน</h3><div class="pets-row">'+pets+'</div>'+
+   '<h3 class="sec">ข้อมูลคลินิก</h3><div class="list">'+
+    '<div class="row"><span class="ic">'+IC.clock+'</span><div class="grow"><b>เปิดทุกวัน 09:00–18:00</b><span class="s">พักเที่ยง 12:00–13:00</span></div></div>'+
+    '<div class="row"><span class="ic">'+IC.phone+'</span><div class="grow"><b>02-123-4567</b><span class="s">ฉุกเฉินโทรได้ตลอด</span></div></div>'+
+   '</div></div>';
+}
+
+function bookScreen(){
+  var head=appbar('จองคิว',{back:'back',right:'<span class="code">'+step+'/3</span>'})+'<div class="progress"><i class="on"></i><i class="'+(step>=2?'on':'')+'"></i><i class="'+(step>=3?'on':'')+'"></i></div>';
+  var body='';
+  if(step===1){
+    body='<h2 class="q">พาน้องคนไหนมา?</h2><div class="list">'+myPets().map(function(p){return '<button class="row" data-act="pet" data-v="'+p.id+'" aria-pressed="'+(sel.pet===p.id)+'">'+petAv(p.name,p.type,44)+'<span class="grow"><b>'+esc(p.name)+'</b><span class="s">'+esc(pInfo(p))+(pDone(p)?'':' · <span style="color:var(--warn)">ประวัติยังไม่ครบ</span>')+'</span></span><span class="radio"></span></button>';}).join('')+'<button class="row" data-act="pet-new"><span class="ic" style="font-size:22px;font-weight:600">+</span><span class="grow"><b>เพิ่มน้องตัวใหม่</b><span class="s">กรอกประวัติครั้งเดียว ใช้ได้ทุกครั้ง</span></span></button></div>'+
+      '<h2 class="q">รับบริการอะไรดี?</h2><div class="list">'+SERVICES.map(function(s){return '<button class="row" data-act="svc" data-v="'+s.id+'" aria-pressed="'+(sel.service===s.id)+'"><span class="ic">'+SVC_IC[s.id]+'</span><span class="grow"><b>'+esc(s.name)+'</b></span><span class="price">'+esc(s.price)+'</span><span class="radio"></span></button>';}).join('')+'</div>'+
+      '<h2 class="q">อยากพบหมอคนไหน?</h2><div class="chips"><button class="chip" data-act="vet" data-v="any" aria-pressed="'+(sel.vet==='any')+'">ใครก็ได้</button>'+VETS.map(function(v){return '<button class="chip" data-act="vet" data-v="'+v.id+'" aria-pressed="'+(sel.vet===v.id)+'">'+esc(v.name)+'</button>';}).join('')+'</div>';
+  }else if(step===2){
+    var days=DAYS.map(function(k,i){var c=closedInfo(k),n=openCount(k,sel.vet),d=parseKey(k);
+      var st=c.all?'<span class="st off">ปิด</span>':(n?'<span class="st">ว่าง '+n+'</span>':'<span class="st full">เต็ม</span>');
+      return '<button class="day" data-act="day" data-v="'+k+'" aria-pressed="'+(sel.date===k)+'"><div class="wd">'+(i===0?'วันนี้':TH_DAY[d.getDay()])+'</div><div class="dn">'+d.getDate()+'</div>'+st+'</button>';}).join('');
+    function grid(list){return '<div class="slots">'+list.map(function(t){
+      var info=slotInfo(sel.date,t,sel.vet),lab;
+      if(info.state==='open')lab=(sel.vet==='any'&&info.free.length===1)?'เหลือ 1':'ว่าง';else lab={full:'เต็ม',closed:'ปิดรับ',past:'เลยเวลา'}[info.state];
+      var pr=sel.time===t;
+      return '<button class="slot '+info.state+'" data-act="slot" data-v="'+t+'" aria-pressed="'+pr+'"'+(info.state==='open'||pr?'':' disabled')+'><b>'+t+'</b><span>'+lab+'</span></button>';}).join('')+'</div>';}
+    var c=closedInfo(sel.date),d=parseKey(sel.date);
+    body='<h2 class="q">วันไหนสะดวก? <small>'+TH_MON[d.getMonth()]+' '+(d.getFullYear()+543)+'</small></h2><div class="days">'+days+'</div>'+
+      '<h2 class="q">เลือกเวลา <small>คิวละ 30 นาที</small></h2>'+
+      (c.all?'<div class="empty">'+mascot(72,'#E6E1F5')+'<span>วันนี้คลินิกปิด ลองเลือกวันอื่นนะ</span></div>':
+      '<div class="slot-h">ช่วงเช้า</div>'+grid(SLOTS.filter(function(t){return t<'12:00';}))+'<div class="slot-h">ช่วงบ่าย</div>'+grid(SLOTS.filter(function(t){return t>='13:00';}))+
+      '<div class="legend"><span><i></i>ว่าง</span><span><i class="l-sel"></i>ที่เลือก</span><span><i class="l-full"></i>มีคนจองแล้ว</span><span><i class="l-off"></i>ปิดรับ/เลยเวลา</span></div>');
+  }else{
+    var p=myPets().find(function(x){return x.id===sel.pet;});
+    body='<h2 class="q">เช็กอีกทีก่อนยืนยันนะ</h2><div class="card sum-card"><div class="sum-head">'+petAv(p.name,p.type,56)+'<div><b>'+esc(p.name)+'</b><span>'+esc(pInfo(p))+'</span></div></div>'+
+      '<dl class="kv"><dt>บริการ</dt><dd>'+esc(svc(sel.service).name)+' · '+esc(svc(sel.service).price)+'</dd><dt>วันที่</dt><dd>'+fmtDate(sel.date,true)+'</dd><dt>เวลา</dt><dd>'+(sel.time?sel.time+' น.':'<span style="color:var(--red)">ยังไม่ได้เลือก</span>')+'</dd><dt>หมอ</dt><dd>'+(sel.vet==='any'?'ใครก็ได้ (ระบบเลือกให้)':esc(vetName(sel.vet)))+'</dd></dl></div>'+
+      (pDone(p)?'<div class="msg okm">'+IC.check2+'<span>ประวัติของ'+esc(p.name)+'ครบแล้ว ไปถึงคลินิกไม่ต้องกรอกกระดาษ</span></div>':'<button class="msg info" style="width:100%;text-align:left" data-act="pet-open" data-v="'+p.id+'">'+IC.alert+'<span>ประวัติของ'+esc(p.name)+'ยังไม่ครบ กรอกในแอปก่อนไป จะได้ไม่ต้องเขียนที่คลินิก <u>กรอกเลย</u></span></button>')+
+      '<label class="flabel" for="note">อาการเบื้องต้น (ถ้ามี)</label><textarea id="note" placeholder="เช่น ไม่ค่อยกินข้าวมา 2 วัน">'+esc(sel.note)+'</textarea>'+
+      (formErr?'<div class="msg err" role="alert">'+IC.alert+'<span>'+formErr+'</span></div>':'')+
+      (formInfo?'<div class="msg info" role="status">'+IC.alert+'<span>'+formInfo+'</span></div>':'')+
+      '<button class="link-btn" data-act="rival">(เดโม) ให้คนอื่นจองเวลานี้ตัดหน้า</button>';
+  }
+  return head+'<div class="pad">'+body+'</div>';
+}
+function bookBar(){
+  var ok=step===1?!!(sel.pet&&sel.service):step===2?!!sel.time:true;
+  var lab=step===3?'ยืนยันการจอง':'ถัดไป';
+  if(step===3&&!sel.time)return '<div class="actionbar"><button class="cta" data-act="goto-step2">เลือกเวลาใหม่</button></div>';
+  return '<div class="actionbar"><button class="cta" data-act="next"'+(ok?'':' disabled')+'>'+lab+'</button></div>';
+}
+function doneScreen(){
+  var b=S.bookings.find(function(x){return x.id===doneId;});if(!b)return homeScreen();
+  return appbar('จองสำเร็จ')+'<div class="done"><div style="display:inline-block">'+mascot(120,'#FFF4D2')+'</div><h2>จองคิวเรียบร้อย!</h2><p>รหัสการจอง</p><div class="big">'+b.code+'</div>'+
+    '<div class="card"><div class="sum-head">'+petAv(b.pet,b.type,48)+'<div><b>'+esc(b.pet)+'</b><span>'+esc(svc(b.service).name)+'</span></div></div><dl class="kv"><dt>วันที่</dt><dd>'+fmtDate(b.date,true)+'</dd><dt>เวลา</dt><dd>'+b.time+' น.</dd><dt>หมอ</dt><dd>'+esc(vetName(b.vet))+'</dd></dl></div>'+
+    '<p>คิวที่ '+qNo(b)+' · คลินิกได้รับแจ้งเตือนแล้ว'+(lineOn()?' และส่งบัตรคิวเข้า LINE ให้แล้ว':' ระบบจะเตือนก่อนวันนัด 1 วัน')+'</p>'+
+    '<button class="cta mt" data-act="ticket" data-v="'+b.id+'">ดูบัตรคิว</button><button class="ghost-btn mt" data-act="nav" data-v="home">กลับหน้าแรก</button></div>';
+}
+function mineScreen(){
+  var up=upcomingMine();
+  var off=S.bookings.filter(function(b){return b.mine&&b.status==='cancelled';}).sort(function(a,b){return (b.cancelledAt||0)-(a.cancelledAt||0);}).slice(0,3);
+  function card(b){
+    var cc=canCancel(b);
+    return '<div class="card appt'+(b.status==='cancelled'?' off':'')+'"><div class="ac-top" style="margin:0"><span class="pill p-'+b.status+'">'+STATUS[b.status]+'</span><span class="code">'+b.code+'</span></div>'+
+      '<div class="ac-main">'+petAv(b.pet,b.type,50)+'<div><b class="tnum">'+fmtDate(b.date)+' · '+b.time+' น.</b><span>'+esc(b.pet)+' · '+esc(svc(b.service).name)+'</span><span>'+esc(vetName(b.vet))+' · <b style="font-family:inherit;font-size:13.5px;display:inline;color:var(--ink)">'+baht(bprice(b))+'</b></span></div></div>'+chgLine(b)+
+      (isActive(b.status)?'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="small-btn yellow" data-act="ticket" data-v="'+b.id+'">ดูบัตรคิว</button>'+(b.status==='booked'?'<button class="small-btn" data-act="chg-ask" data-v="'+b.id+'">เปลี่ยนแพ็กเกจ</button>':'')+(b.status==='booked'&&cc?'<button class="small-btn" data-act="cancel-ask" data-v="'+b.id+'">ยกเลิกนัด</button>':'')+'</div>'+(b.status==='booked'&&!cc?'<div class="hint">เหลือไม่ถึง 1 ชม. ถ้าจะยกเลิกโทร 02-123-4567</div>':''):'')+'</div>';
+  }
+  return appbar('นัดของฉัน')+'<div class="pad">'+
+    (up.length?up.map(card).join(''):'<div class="empty">'+mascot(80,'#FFF0B8')+'<span>ยังไม่มีนัดที่กำลังจะถึง</span><button class="small-btn yellow" data-act="start">จองคิวเลย</button></div>')+
+    '<p class="hint" style="margin-top:12px">ยกเลิกเองได้ก่อนเวลานัดอย่างน้อย 1 ชั่วโมง คิวที่ยกเลิกจะว่างให้คนอื่นทันที</p>'+
+    (off.length?'<h3 class="sec">ยกเลิกแล้ว</h3>'+off.map(card).join(''):'')+'</div>';
+}
+function clinicScreen(){
+  var unread=S.notifs.filter(function(n){return !n.read;}).length;
+  var h=appbar('หลังบ้านคลินิก',{left:'<span class="staff">พนักงาน</span>',right:'<button class="icon-btn" data-act="logout-ask" aria-label="ออกจากระบบ">'+IC.out+'</button>'})+
+    '<div class="seg" role="tablist"><button role="tab" data-act="ctab" data-v="queue" aria-selected="'+(ctab==='queue')+'">คิว</button><button role="tab" data-act="ctab" data-v="notif" aria-selected="'+(ctab==='notif')+'">แจ้งเตือน'+(unread?'<span class="cnt">'+unread+'</span>':'')+'</button><button role="tab" data-act="ctab" data-v="time" aria-selected="'+(ctab==='time')+'">เปิด-ปิดคิว</button></div>';
+  var days='<div class="days">'+DAYS.map(function(d,i){var n=S.bookings.filter(function(b){return b.date===d&&b.status!=='cancelled';}).length,c=closedInfo(d),dt=parseKey(d);
+    return '<button class="day" data-act="cday" data-v="'+d+'" aria-pressed="'+(cdate===d)+'"><div class="wd">'+(i===0?'วันนี้':TH_DAY[dt.getDay()])+'</div><div class="dn">'+dt.getDate()+'</div>'+(c.all?'<span class="st off">ปิด</span>':'<span class="st" style="color:inherit">'+n+' นัด</span>')+'</button>';}).join('')+'</div>';
+  var body='';
+  if(ctab==='queue'){
+    var list=S.bookings.filter(function(b){return b.date===cdate;}).sort(function(a,b){return a.time.localeCompare(b.time)||a.vet.localeCompare(b.vet);});
+    var cnt={all:0,booked:0,in:0,off:0};
+    list.forEach(function(b){if(b.status==='cancelled'||b.status==='noshow')cnt.off++;else{cnt.all++;if(b.status==='booked')cnt.booked++;else cnt.in++;}});
+    var items=list.length?list.map(function(b){
+      var act='';
+      if(b.status==='booked')act='<div class="qi-act"><button class="small-btn yellow" data-act="st" data-v="'+b.id+'" data-to="checkedin">เช็กอิน</button><button class="small-btn" data-act="st" data-v="'+b.id+'" data-to="noshow">ไม่มา</button></div>';
+      else if(b.status==='checkedin')act='<div class="qi-act"><button class="small-btn red" data-act="st" data-v="'+b.id+'" data-to="inroom">เรียกเข้า'+ROOM[b.vet]+'</button></div>';
+      else if(b.status==='inroom')act='<div class="qi-act"><button class="small-btn green" data-act="st" data-v="'+b.id+'" data-to="done">ตรวจเสร็จ</button></div>';
+      var off=b.status==='cancelled'||b.status==='noshow';
+      return '<div class="qi'+(off?' off':'')+(b.id===lastNew?' is-new':'')+'"><div class="qi-time">'+b.time+'<span class="s" style="font-family:var(--f-body);font-size:11.5px">คิว '+qNo(b)+'</span></div><div class="qi-main">'+petAv(b.pet,b.type,42)+'<div class="qi-txt"><div class="qi-top"><span class="nm">'+esc(b.pet)+'</span><span class="pill p-'+b.status+'">'+STATUS[b.status]+'</span></div>'+
+        '<span class="s">'+esc(b.owner)+' · '+esc(svc(b.service).name)+' · <b style="color:var(--ink);white-space:nowrap">'+baht(bprice(b))+'</b></span><span class="s">'+esc(vetName(b.vet))+' · '+b.code+'</span>'+chgLine(b)+(b.note?'<span class="note">"'+esc(b.note)+'"</span>':'')+(b.petId?'<div class="qi-act" style="margin-top:6px"><button class="small-btn" data-act="pf-view" data-v="'+b.petId+'">ดูประวัติน้อง</button></div>':'')+act+'</div></div></div>';
+    }).join(''):'<div class="empty">'+mascot(72,'#E3F1D4')+'<span>วันนี้ยังไม่มีนัด</span></div>';
+    body=days+'<div class="stats"><div class="stat s1"><b>'+cnt.all+'</b><span>นัดทั้งหมด</span></div><div class="stat s2"><b>'+cnt.booked+'</b><span>รอตรวจ</span></div><div class="stat s3"><b>'+cnt.in+'</b><span>มาแล้ว</span></div><div class="stat s4"><b>'+cnt.off+'</b><span>ยกเลิก/ไม่มา</span></div></div><div class="list">'+items+'</div>';
+  }else if(ctab==='notif'){
+    var nts=S.notifs.length?S.notifs.map(function(n){var bk=n.bid&&S.bookings.find(function(x){return x.id===n.bid;});var nm=n.text.replace(/^[^:]+:\s*/,'').split(' (')[0];var tp=/\(แมว\)/.test(n.text)?'แมว':'สุนัข';
+      return '<div class="nt'+(n.read?'':' unread')+(n.kind==='cancel'?' cancel':'')+'">'+petAv(nm,tp,40)+'<div style="flex:1;min-width:0"><b>'+esc(n.text)+'</b><span>'+esc(n.sub)+'</span><span>'+ago(n.at)+'</span></div>'+(n.read?'':'<span class="dot"></span>')+'</div>';}).join(''):'<div class="empty">'+mascot(72)+'<span>ยังไม่มีแจ้งเตือน</span></div>';
+    body='<div class="line-card" style="margin-top:4px"><span class="lc-ic">'+IC.chat+'</span><span class="grow"><b>กลุ่ม LINE ทีมปุกปุย</b><span class="s">การจองใหม่และการยกเลิกส่งเข้ากลุ่มของทีมอัตโนมัติ</span></span></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 10px"><span class="hint">'+(unread?'ยังไม่ได้อ่าน '+unread+' รายการ':'อ่านครบแล้ว')+'</span>'+(unread?'<button class="small-btn" data-act="read-all">อ่านทั้งหมด</button>':'')+'</div><div class="list">'+nts+'</div>';
+  }else{
+    var c=closedInfo(cdate);
+    var ms=SLOTS.map(function(t){var tk=takenVets(cdate,t).length,cl=c.all||c.times.indexOf(t)>=0,past=isPast(cdate,t);
+      return '<button class="slot mslot'+(cl?' m-closed':'')+(tk>=VETS.length?' m-full':'')+'" data-act="toggle-slot" data-v="'+t+'"'+(past||c.all?' disabled':'')+'><b>'+t+'</b><span>'+(cl?'ปิดรับ':'จอง '+tk+'/'+VETS.length)+'</span></button>';}).join('');
+    body=days+'<div class="list" style="margin-top:8px"><div class="switch-row"><div><b>ปิดทำการทั้งวัน</b><span class="s hint" style="display:block">'+fmtDate(cdate,true)+'</span></div><button class="switch" role="switch" aria-checked="'+c.all+'" aria-label="ปิดทำการทั้งวัน" data-act="toggle-day"></button></div></div>'+
+      '<h3 class="sec">แตะเพื่อปิด/เปิดรับจองเป็นช่วง</h3><p class="hint" style="margin:-4px 0 10px">เช่น หมอติดผ่าตัดหรือประชุมทีม นัดที่จองไว้แล้วยังอยู่</p><div class="slots four">'+ms+'</div>'+
+      '<button class="ghost-btn" style="margin-top:28px" data-act="reset-ask">รีเซ็ตข้อมูลตัวอย่าง</button><p class="hint" style="text-align:center">ข้อมูลเดโมเก็บไว้ในเบราว์เซอร์เครื่องนี้</p>';
+  }
+  return h+'<div class="pad">'+body+'</div>';
+}
+function loginScreen(){
+  var st=loginTab==='staff';
+  return '<div class="login"><div class="login-hero">'+mascot(116,'#FFFFFF')+'<h1>ปุกปุย คลินิก</h1><p>ระบบจองคิวและบันทึกสุขภาพสัตว์เลี้ยง</p></div>'+
+  '<div class="pad"><div class="seg" style="margin:4px 0 6px" role="tablist"><button role="tab" data-act="ltab" data-v="customer" aria-selected="'+!st+'">ลูกค้า</button><button role="tab" data-act="ltab" data-v="staff" aria-selected="'+st+'">พนักงานคลินิก</button></div>'+
+  '<form id="lf" novalidate><label class="flabel" for="lu">'+(st?'รหัสพนักงาน':'เบอร์โทรศัพท์')+'</label><input id="lu" class="inp" '+(st?'autocomplete="username" value="staff01"':'type="tel" inputmode="tel" autocomplete="tel" value="081-234-5678"')+'>'+
+  '<label class="flabel" for="lp">รหัสผ่าน</label><input id="lp" class="inp" type="password" autocomplete="current-password" value="1234">'+
+  (loginErr?'<div class="msg err" role="alert">'+IC.alert+'<span>'+loginErr+'</span></div>':'')+
+  '<button class="cta" type="submit" style="margin-top:18px">เข้าสู่ระบบ</button></form>'+
+  '<div class="lock">'+IC.lock+'<span>'+(st?'หน้าหลังบ้านเข้าได้เฉพาะพนักงาน':'ข้อมูลน้องๆ เห็นได้เฉพาะเจ้าของบัญชี')+'</span></div>'+
+  '</div></div>';
+}
+function cnotifScreen(){
+  var items=S.cnotifs.length?S.cnotifs.map(function(n){
+    return '<div class="nt'+(n.read?'':' unread')+(n.kind==='cancel'||n.kind==='noshow'?' cancel':'')+'">'+petAv(n.pet,n.type,40)+'<div style="flex:1;min-width:0"><b>'+esc(n.text)+'</b><span>'+esc(n.sub)+'</span><span>'+ago(n.at)+'</span></div>'+(n.read?'':'<span class="dot"></span>')+'</div>';
+  }).join(''):'<div class="empty">'+mascot(72)+'<span>ยังไม่มีแจ้งเตือน</span></div>';
+  return appbar('แจ้งเตือน')+'<div class="pad">'+lineCard()+'<p class="hint" style="margin:0 0 10px">ระบบเตือนนัดให้อัตโนมัติก่อนวันนัด 1 วัน และเช้าวันนัด</p><div class="list">'+items+'</div></div>';
+}
+function chgLine(b){
+  if(!b.history||!b.history.length)return '';
+  var h=b.history[b.history.length-1];
+  return '<span class="chg">เปลี่ยนแพ็กเกจ '+baht(h.fromAmt)+' → '+baht(h.toAmt)+' · '+fmtDate(keyOf(new Date(h.at)))+' '+hm(h.at)+' โดย'+h.by+'</span>';
+}
+var draft=null,petEditId=null,chgId=null,chgSel=null,petBack='home';
+function petScreen(){
+  var p=draft;if(!p)return homeScreen();
+  var isNew=!petEditId;
+  function txt(f,label,ph,req,mode){return '<label class="flabel" for="pf-'+f+'">'+label+(req?' <span style="color:var(--red)">*</span>':'')+'</label><input id="pf-'+f+'" class="inp" data-pf="'+f+'" value="'+esc(p[f]||'')+'" placeholder="'+ph+'"'+(mode?' inputmode="'+mode+'"':'')+'>';}
+  function ch(f,label,opts){return '<p class="flabel">'+label+' <span style="color:var(--red)">*</span></p><div class="chips">'+opts.map(function(o){return '<button class="chip" data-act="pf-chip" data-f="'+f+'" data-v="'+o+'" aria-pressed="'+(p[f]===o)+'">'+o+'</button>';}).join('')+'</div>';}
+  var ok=pDone(p);
+  return appbar(isNew?'เพิ่มน้อง':'ประวัติน้อง',{back:'pf-back'})+'<div class="pad">'+
+    '<div class="card pf-head">'+petAv(p.name||'น้องใหม่',p.type||'แมว',64)+'<div class="grow"><b>'+esc(p.name||'น้องใหม่')+'</b><span class="'+(ok?'pok':'pwarn')+'">'+(ok?'ประวัติครบแล้ว':'ยังกรอกไม่ครบ')+'</span></div></div>'+
+    '<p class="hint" style="margin:10px 2px 0">กรอกครั้งเดียว ใช้ได้ทุกครั้งที่มาคลินิก ไม่ต้องเขียนกระดาษ หมอเปิดดูได้ทันที</p>'+
+    txt('name','ชื่อน้อง','เช่น ถั่วแดง',true)+ch('type','ชนิด',['แมว','สุนัข'])+txt('breed','พันธุ์','เช่น อเมริกันชอร์ตแฮร์',true)+ch('sex','เพศ',['เพศผู้','เพศเมีย'])+
+    txt('age','อายุ','เช่น 2 ปี',true)+txt('weight','น้ำหนัก (กก.)','เช่น 4.2',true,'decimal')+ch('neutered','ทำหมัน',['ทำหมันแล้ว','ยังไม่ทำ'])+
+    txt('allergy','แพ้ยา / แพ้อาหาร','ถ้าไม่มี พิมพ์ว่า ไม่มี',true)+txt('disease','โรคประจำตัว','ถ้าไม่มี พิมพ์ว่า ไม่มี',true)+txt('vaccines','วัคซีนที่เคยฉีด','เช่น วัคซีนรวม, พิษสุนัขบ้า',false)+
+    (formErr?'<div class="msg err" role="alert">'+IC.alert+'<span>'+formErr+'</span></div>':'')+'</div>';
+}
+function profileSheet(pid){
+  var p=myPets().find(function(x){return x.id===pid;});if(!p)return;
+  var rows=[['ชนิด','type'],['พันธุ์','breed'],['เพศ','sex'],['อายุ','age'],['น้ำหนัก','weight'],['ทำหมัน','neutered'],['แพ้ยา/อาหาร','allergy'],['โรคประจำตัว','disease'],['วัคซีน','vaccines']];
+  sheet('<div style="display:flex;gap:12px;align-items:center">'+petAv(p.name,p.type,56)+'<div><h2>ประวัติของ'+esc(p.name)+'</h2><p>เจ้าของ '+ME.name+' · '+ME.phone+'</p></div></div>'+
+    '<dl class="kv" style="margin-top:14px">'+rows.map(function(r){var v=p[r[1]];return '<dt>'+r[0]+'</dt><dd>'+(v?esc(v)+(r[1]==='weight'?' กก.':''):'<span style="color:var(--red)">ยังไม่กรอก</span>')+'</dd>';}).join('')+'</dl>'+
+    (p.updatedAt?'<p class="hint" style="margin-top:10px">ลูกค้ากรอกในแอป · อัปเดต '+fmtDate(keyOf(new Date(p.updatedAt)))+'</p>':'')+
+    '<div class="btns"><button class="ghost-btn" data-act="close-modal">ปิด</button></div>');
+}
+function chgSheet(){
+  var b=S.bookings.find(function(x){return x.id===chgId;});if(!b)return;
+  sheet('<h2>เปลี่ยนแพ็กเกจ</h2><p>'+esc(b.pet)+' · '+fmtDate(b.date)+' '+b.time+' น.</p><div class="list" style="margin-top:12px">'+
+    SERVICES.map(function(sv){var cur=sv.id===b.service;return '<button class="row" data-act="chg-pick" data-v="'+sv.id+'" aria-pressed="'+(chgSel===sv.id)+'"><span class="ic">'+SVC_IC[sv.id]+'</span><span class="grow"><b>'+esc(sv.name)+'</b>'+(cur?'<span class="s">แพ็กเกจปัจจุบัน</span>':'')+'</span><span class="price">'+sv.price+'</span><span class="radio"></span></button>';}).join('')+'</div>'+
+    '<p class="hint" style="margin-top:10px">ราคาใหม่จะอัปเดตในบัตรคิว และคลินิกได้รับแจ้งทันที</p>'+
+    '<div class="btns"><button class="cta" data-act="chg-yes"'+(chgSel&&chgSel!==b.service?'':' disabled')+'>ยืนยันเปลี่ยนแพ็กเกจ</button><button class="ghost-btn" data-act="close-modal">ยกเลิก</button></div>');
+}
+function lineCard(){
+  return lineOn()?'<button class="line-card" data-act="open-line"><span class="lc-ic">'+IC.chat+'</span><span class="grow"><b>แจ้งเตือนผ่าน LINE: เปิดอยู่</b><span class="s">เตือนนัด บัตรคิว และเรียกคิว ส่งเข้า LINE</span></span><span class="lc-go">เปิดแชต</span></button>'
+    :'<div class="line-card"><span class="lc-ic">'+IC.chat+'</span><span class="grow"><b>รับแจ้งเตือนทาง LINE</b><span class="s">ไม่พลาดนัด รู้ทันทีเมื่อถึงคิว</span></span><button class="small-btn green-line" data-act="line-connect">เชื่อมต่อ</button></div>';
+}
+function miniLive(b){
+  if(b.date!==today()||!isActive(b.status))return '';
+  var ah=aheadOf(b);
+  var t=b.status==='inroom'?'ถึงคิวแล้ว! เชิญ'+ROOM[b.vet]:(ah?'อีก '+ah+' คิวจะถึงคุณ':'คิวถัดไปคือคุณ');
+  return '<div class="mini-live"><span class="live-dot"></span><span>คิวที่ '+qNo(b)+' · '+t+'</span></div>';
+}
+function qrSVG(t){try{var q=new QRLib.QRCode(-1,QRLib.ECL.M);q.addData(t);q.make();var n=q.getModuleCount(),d='';for(var r=0;r<n;r++)for(var c=0;c<n;c++)if(q.isDark(r,c))d+='M'+c+' '+r+'h1v1h-1z';return '<svg viewBox="-2 -2 '+(n+4)+' '+(n+4)+'" role="img" aria-label="QR code"><rect x="-2" y="-2" width="'+(n+4)+'" height="'+(n+4)+'" fill="#fff"/><path d="'+d+'" fill="#3B3530"/></svg>';}catch(e){}return '<div class="qr-fallback">QR '+esc(t.split('|')[1]||'')+'</div>';}
+function ticketScreen(){
+  var b=S.bookings.find(function(x){return x.id===ticketId;});if(!b)return mineScreen();
+  var tk='<div class="ticket"><div class="tk-top"><div class="tk-brand">'+mascot(30,'#FFFFFF')+'<span>ปุกปุย คลินิก</span></div><div class="tk-q"><span>คิวที่</span><b>'+qNo(b)+'</b></div><div class="tk-when">'+fmtDate(b.date,true)+' · '+b.time+' น.</div></div>'+
+    '<div class="tk-cut"></div><div class="tk-body"><div class="sum-head" style="border:0;margin:0;padding:0 0 10px">'+petAv(b.pet,b.type,48)+'<div><b>'+esc(b.pet)+'</b><span>'+esc(svc(b.service).name)+'</span></div><span class="pill p-'+b.status+'" style="margin-left:auto">'+STATUS[b.status]+'</span></div>'+
+    '<dl class="kv"><dt>ราคา</dt><dd>'+baht(bprice(b))+'</dd><dt>สัตวแพทย์</dt><dd>'+esc(vetName(b.vet))+'</dd><dt>ห้อง</dt><dd>'+ROOM[b.vet]+'</dd></dl>'+chgLine(b)+
+    '<div class="tk-qr">'+qrSVG('PUKPUI|'+b.code)+'<span class="code">'+b.code+'</span><span class="hint">ยื่นให้พนักงานสแกนเมื่อมาถึงคลินิก</span></div></div></div>';
+  var steps=['จองแล้ว','มาถึงคลินิก','กำลังตรวจ','เสร็จ'],cur={booked:0,checkedin:1,inroom:2,done:4}[b.status];
+  var stepHtml='<ol class="steps">'+steps.map(function(x,i){return '<li class="'+(i<cur?'ok':(i===cur?'cur':''))+'"><i></i><span>'+x+'</span></li>';}).join('')+'</ol>';
+  var live='';
+  if(b.status==='done'){live='<div class="card live"><div class="live-h"><span class="live-dot off"></span>ติดตามคิวสด</div><div class="live-big">ตรวจเสร็จแล้ว</div><div class="live-sub">ขอบคุณที่ไว้ใจปุกปุย คลินิก</div>'+stepHtml+'</div>';}
+  else if(isActive(b.status)&&b.date===today()){
+    var ah=aheadOf(b),sv=servingQ(b),big,sub;
+    if(b.status==='inroom'){big='ถึงคิวแล้ว!';sub='เชิญที่'+ROOM[b.vet]+'ได้เลย';}
+    else if(ah===0){big='คิวถัดไปคือคุณ';sub=b.status==='checkedin'?'รอพนักงานเรียกสักครู่':'มาถึงแล้วเช็กอินที่เคาน์เตอร์ได้เลย';}
+    else{big='อีก '+ah+' คิว';sub='รอประมาณ '+(ah*15)+' นาที';}
+    live='<div class="card live"><div class="live-h"><span class="live-dot"></span>ติดตามคิวสด<span class="hint" style="margin-left:auto;font-weight:400">อัปเดตอัตโนมัติ</span></div><div class="live-big'+(b.status==='inroom'?' go':'')+'">'+big+'</div><div class="live-sub">'+sub+'</div>'+
+      '<div class="now">'+ROOM[b.vet]+' กำลังตรวจ: <b>'+(sv?'คิวที่ '+sv:'ยังไม่มีคิว')+'</b></div>'+stepHtml+'</div>';
+  }else if(isActive(b.status)){
+    live='<div class="card live"><div class="live-h"><span class="live-dot off"></span>ติดตามคิวสด</div><div class="live-sub" style="margin-top:6px">เปิดให้ติดตามได้ในวันนัด ('+fmtDate(b.date)+') ระบบจะเตือนก่อนวันนัด 1 วัน'+(lineOn()?' ทาง LINE':'')+'</div>'+stepHtml+'</div>';
+  }
+  return appbar('บัตรคิว',{back:'back-mine'})+'<div class="pad">'+tk+live+'</div>';
+}
+function hm(ts){var d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes());}
+function lineScreen(){
+  var title={change:'เปลี่ยนแพ็กเกจแล้ว',booked:'ยืนยันการจอง',remind:'เตือนนัดหมาย',near:'ใกล้ถึงคิวแล้ว',inroom:'ถึงคิวแล้ว!'};
+  var msgs=S.line.msgs.map(function(m){
+    var b=m.bid&&S.bookings.find(function(x){return x.id===m.bid;}),card='';
+    if(b&&title[m.kind]){
+      card='<div class="flex"><div class="fx-h fx-'+m.kind+'">'+title[m.kind]+'</div><div class="fx-b"><div class="fx-q">'+petAv(b.pet,b.type,40)+'<div><b>'+esc(b.pet)+'</b><span>'+esc(svc(b.service).name)+'</span></div></div>'+
+        '<div class="fx-row"><span>วันที่</span>'+fmtDate(b.date)+'</div><div class="fx-row"><span>เวลา</span>'+b.time+' น.</div><div class="fx-row"><span>คิวที่</span>'+qNo(b)+'</div><div class="fx-row"><span>ห้อง</span>'+ROOM[b.vet]+'</div><div class="fx-row"><span>ราคา</span><b>'+baht(bprice(b))+'</b></div></div>'+
+        '<button class="fx-btn" data-act="ticket" data-v="'+b.id+'">ดูบัตรคิว</button></div>';
+    }
+    return '<div class="lm">'+mascot(36,'#FFFFFF')+'<div class="lm-c"><span class="lm-n">ปุกปุย คลินิก</span><div class="bub">'+esc(m.text)+'</div>'+card+'</div><span class="lm-t">'+hm(m.at)+'</span></div>';
+  }).join('');
+  return '<header class="lappbar"><button class="icon-btn" data-act="nav" data-v="cnotif" aria-label="ย้อนกลับ">'+IC.back+'</button><h1>ปุกปุย คลินิก<small>บัญชีทางการของคลินิก</small></h1><span></span></header>'+
+    '<div class="lchat"><div class="lday">วันนี้</div>'+msgs+'</div>';
+}
+function lineBar(){return '<div class="rich"><button data-act="start">'+IC.book+'<span>จองคิว</span></button><button data-act="next-ticket">'+IC.ticket+'<span>บัตรคิว</span></button><button data-act="call">'+IC.phone+'<span>ติดต่อคลินิก</span></button></div>';}
+function showPush(m){
+  var el=document.getElementById('push');
+  el.innerHTML='<button class="push" data-act="open-line"><span class="push-ic">'+IC.chat+'</span><span class="push-t"><b>LINE · ปุกปุย คลินิก</b><span>'+esc(m.text)+'</span></span><span class="push-time">ตอนนี้</span></button>';
+  clearTimeout(pushT);pushT=setTimeout(function(){el.innerHTML='';},4500);
+}
+function navBar(){
+  if(role!=='customer')return '';
+  var unread=cUnread();
+  var cur=view==='done'?'home':view==='ticket'?'mine':view==='line'?'cnotif':view==='pet'?'home':view;
+  function it(v,icon,lab,badge){return '<button data-act="'+(v==='book'?'start':'nav')+'" data-v="'+v+'"'+(cur===v?' aria-current="page"':'')+'>'+icon+'<span>'+lab+'</span>'+(badge?'<span class="nb">'+badge+'</span>':'')+'</button>';}
+  return '<nav class="nav">'+it('home',IC.home,'หน้าแรก')+it('book',IC.book,'จองคิว')+it('mine',IC.list,'นัดของฉัน')+it('cnotif',IC.bell,'แจ้งเตือน',unread)+'</nav>';
+}
+
+/* ---------- render ---------- */
+var lastView='';
+function render(){
+  if(role)checkReminders();
+  var html=view==='login'?loginScreen():view==='home'?homeScreen():view==='book'?bookScreen():view==='done'?doneScreen():view==='mine'?mineScreen():view==='cnotif'?cnotifScreen():view==='ticket'?ticketScreen():view==='line'?lineScreen():view==='pet'?petScreen():clinicScreen();
+  var key=view+(view==='book'?step:'')+(view==='clinic'?ctab:'');
+  screenEl.innerHTML=html;
+  if(key!==lastView){screenEl.scrollTop=0;lastView=key;}
+  barEl.innerHTML=view==='book'?bookBar():view==='line'?lineBar():view==='pet'?'<div class="actionbar"><button class="cta" data-act="pf-save">บันทึกประวัติน้อง</button></div>':navBar();
+  if(view==='line')screenEl.scrollTop=screenEl.scrollHeight;
+  if(role==='customer'){var L=S.line.msgs.length;if(pushSeen<0)pushSeen=L;else if(L>pushSeen){pushSeen=L;if(view!=='line')showPush(S.line.msgs[L-1]);}}
+  var note=document.getElementById('note');if(note)note.addEventListener('input',function(){sel.note=note.value;});
+  if(view==='pet')screenEl.querySelectorAll('[data-pf]').forEach(function(inp){inp.addEventListener('input',function(){draft[inp.getAttribute('data-pf')]=inp.value;});});
+  if(view==='cnotif'&&cUnread()){S.cnotifs.forEach(function(n){n.read=true;});save();}
+}
+function toast(m){var tc=document.getElementById('toast');while(tc.children.length>=2)tc.firstChild.remove();var t=document.createElement('div');t.className='toast';t.textContent=m;document.getElementById('toast').appendChild(t);setTimeout(function(){t.remove();},2400);}
+function sheet(h){modal.innerHTML='<div class="overlay" data-act="close-modal"><div class="sheet" role="dialog" aria-modal="true">'+h+'</div></div>';var b=modal.querySelector('.sheet button');if(b)b.focus();}
+function closeSheet(){modal.innerHTML='';}
+function sync(){var s=load();if(s){S=s;norm();}}
+function go(v){if(v==='clinic'&&role!=='staff'){toast('หน้านี้สำหรับพนักงานคลินิกเท่านั้น');v=role?'home':'login';}if(v!=='login'&&!role)v='login';view=v;try{history.replaceState(null,'',v==='clinic'?'#clinic':'#app');}catch(_){}render();}
+
+function confirmBooking(){
+  sync();formInfo='';
+  var pet=myPets().find(function(p){return p.id===sel.pet;});
+  var dup=S.bookings.find(function(b){return b.mine&&b.petId===pet.id&&b.date===sel.date&&b.status!=='cancelled';});
+  if(dup){formErr=esc(pet.name)+' มีนัดวันนี้แล้วตอน '+dup.time+' น. (น้อง 1 ตัวจองได้วันละ 1 นัด)';render();return;}
+  var info=slotInfo(sel.date,sel.time,sel.vet);
+  if(info.state!=='open'){formErr='จองไม่สำเร็จ เวลา '+sel.time+' น. มีคนจองเต็มไปก่อนแล้ว ระบบไม่ให้จองซ้ำ ลองเลือกเวลาอื่นนะ';sel.time=null;render();return;}
+  var b=mk(S,{date:sel.date,time:sel.time,vet:info.free[0],owner:ME.name,pet:pet.name,type:pet.type,petId:pet.id,service:sel.service,amt:svc(sel.service).amt,note:sel.note.trim(),status:'booked',mine:true,createdAt:Date.now()});
+  S.bookings.push(b);notify('new',b);cnotify('booked',b,'จองคิวสำเร็จ รหัส '+b.code);save();
+  lastNew=doneId=b.id;formErr='';sel={pet:null,service:null,vet:'any',date:null,time:null,note:''};sel.date=firstOpenDay();step=1;
+  go('done');
+}
+function rival(){
+  sync();formErr='';formInfo='';
+  var info=slotInfo(sel.date,sel.time,sel.vet);
+  if(info.state!=='open'){formInfo='เวลานี้เต็มอยู่แล้ว ลองกดยืนยันดูได้เลย';render();return;}
+  var names=[['คุณวิน','ปลาทู','แมว'],['คุณเมย์','บิงซู','สุนัข']];
+  info.free.forEach(function(v,i){var n=names[i%2];var b=mk(S,{date:sel.date,time:sel.time,vet:v,owner:n[0],pet:n[1],type:n[2],service:'checkup',status:'booked',createdAt:Date.now()});S.bookings.push(b);notify('new',b);});
+  save();formInfo='มีคนอื่นเพิ่งจองเวลา '+sel.time+' น. จนเต็ม ลองกด "ยืนยันการจอง" ดูว่าระบบจะยอมให้จองซ้ำไหม';render();
+}
+
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');if(!el)return;
+  var a=el.getAttribute('data-act'),v=el.getAttribute('data-v');
+  if(a==='close-modal'){if(el.classList.contains('overlay')&&e.target!==el)return;closeSheet();return;}
+  switch(a){
+    case 'nav': if(v==='clinic')sync(); go(v); break;
+    case 'start': step=1;formErr='';formInfo='';if(!sel.date||openCount(sel.date,sel.vet)===0)sel.date=firstOpenDay();go('book');break;
+    case 'back': formErr='';formInfo=''; if(step>1){step--;render();}else go('home'); break;
+    case 'next': if(step<3){step++;formErr='';formInfo='';render();}else confirmBooking(); break;
+    case 'goto-step2': step=2;formErr='';formInfo='';render();break;
+    case 'pet': sel.pet=v;render();break;
+    case 'svc': sel.service=v;render();break;
+    case 'vet': sel.vet=v;if(sel.time&&slotInfo(sel.date,sel.time,v).state!=='open')sel.time=null;render();break;
+    case 'day': sel.date=v;sel.time=null;render();break;
+    case 'slot': if(slotInfo(sel.date,v,sel.vet).state==='open'){sel.time=v;render();}break;
+    case 'rival': rival();break;
+    case 'cancel-ask':
+      var b=S.bookings.find(function(x){return x.id===v;});if(!b)break;
+      sheet('<div style="display:flex;gap:12px;align-items:center">'+petAv(b.pet,b.type,52)+'<div><h2>ยกเลิกนัดของ'+esc(b.pet)+'?</h2><p>'+fmtDate(b.date,true)+' เวลา '+b.time+' น.</p></div></div><p>ยกเลิกแล้วคิวนี้จะว่างให้คนอื่นจองได้ทันที</p><div class="btns"><button class="cta red" data-act="cancel-yes" data-v="'+b.id+'">ยกเลิกนัด</button><button class="ghost-btn" data-act="close-modal">ไม่ยกเลิก</button></div>');break;
+    case 'cancel-yes':
+      sync();var bk=S.bookings.find(function(x){return x.id===v;});
+      if(bk&&canCancel(bk)){bk.status='cancelled';bk.cancelledAt=Date.now();notify('cancel',bk);cnotify('cancel',bk,'ยกเลิกนัดของ'+bk.pet+'แล้ว');save();toast('ยกเลิกนัดแล้ว');}
+      closeSheet();render();break;
+    case 'ltab': loginTab=v;loginErr='';render();break;
+    case 'fill': document.getElementById('lu').value=loginTab==='staff'?'staff01':'081-234-5678';document.getElementById('lp').value='1234';break;
+    case 'logout-ask': sheet('<h2>ออกจากระบบ?</h2><p>'+(role==='staff'?'ออกจากหน้าหลังบ้านคลินิก':'ต้องเข้าสู่ระบบใหม่เพื่อจองคิว')+'</p><div class="btns"><button class="cta red" data-act="logout">ออกจากระบบ</button><button class="ghost-btn" data-act="close-modal">ยกเลิก</button></div>');break;
+    case 'logout': pushSeen=-1;loginTab=role==='staff'?'staff':'customer';setRole(null);closeSheet();loginErr='';step=1;formErr='';formInfo='';go('login');break;
+    case 'ctab': ctab=v;render();break;
+    case 'pet-open': var pp=myPets().find(function(x){return x.id===v;});if(pp){closeSheet();petEditId=v;draft=JSON.parse(JSON.stringify(pp));formErr='';petBack=view;go('pet');}break;
+    case 'pet-new': petEditId=null;draft={type:'แมว'};formErr='';petBack=view;go('pet');break;
+    case 'pf-back': draft=null;formErr='';go(petBack&&petBack!=='pet'?petBack:'home');break;
+    case 'pf-chip': draft[el.getAttribute('data-f')]=v;render();break;
+    case 'pf-save':
+      var miss=PF_REQ.filter(function(f){return !draft[f]||!String(draft[f]).trim();});
+      if(miss.length){formErr='ยังกรอกไม่ครบ '+miss.length+' ช่อง (ช่องที่มีดอกจัน)';render();screenEl.scrollTop=screenEl.scrollHeight;break;}
+      sync();draft.updatedAt=Date.now();
+      if(petEditId){var ix=S.myPets.findIndex(function(x){return x.id===petEditId;});if(ix>=0)S.myPets[ix]=draft;}else{draft.id='p'+Date.now();S.myPets.push(draft);if(petBack==='book')sel.pet=draft.id;}
+      save();toast('บันทึกประวัติ'+draft.name+'แล้ว');formErr='';var back=petBack&&petBack!=='pet'?petBack:'home';draft=null;go(back);break;
+    case 'pf-view': profileSheet(v);break;
+    case 'chg-ask': chgId=v;var cb=S.bookings.find(function(x){return x.id===v;});chgSel=cb?cb.service:null;chgSheet();break;
+    case 'chg-pick': chgSel=v;chgSheet();break;
+    case 'chg-yes':
+      sync();var bb=S.bookings.find(function(x){return x.id===chgId;});
+      if(bb&&chgSel&&chgSel!==bb.service){
+        var fromAmt=bprice(bb),fromName=svc(bb.service).name,to=svc(chgSel);
+        bb.history=(bb.history||[]).concat([{at:Date.now(),from:bb.service,fromAmt:fromAmt,to:chgSel,toAmt:to.amt,by:'ลูกค้า'}]);
+        bb.service=chgSel;bb.amt=to.amt;
+        S.notifs.unshift({id:'n'+Date.now(),kind:'change',text:'ลูกค้าเปลี่ยนแพ็กเกจ: '+bb.pet+' ('+bb.type+') · '+baht(fromAmt)+' → '+baht(to.amt),sub:fromName+' → '+to.name+' · '+fmtDate(bb.date)+' '+bb.time+' น. · '+bb.owner,at:Date.now(),read:false,bid:bb.id});
+        cnotify('change',bb,'เปลี่ยนเป็น'+to.name+'แล้ว ราคาใหม่ '+baht(to.amt));
+        save();toast('เปลี่ยนแพ็กเกจแล้ว · ราคาใหม่ '+baht(to.amt));
+      }
+      closeSheet();render();break;
+    case 'ticket': ticketId=v;closeSheet();go('ticket');break;
+    case 'back-mine': go('mine');break;
+    case 'next-ticket': var nt=upcomingMine()[0];if(nt){ticketId=nt.id;go('ticket');}else toast('ยังไม่มีนัดที่กำลังจะถึง');break;
+    case 'open-line': document.getElementById('push').innerHTML='';go('line');break;
+    case 'call': toast('โทร 02-123-4567');break;
+    case 'line-connect': sheet('<div style="text-align:center"><div style="display:inline-block">'+mascot(84,'#E3F1D4')+'</div><h2 style="margin-top:8px">เพิ่มเพื่อน ปุกปุย คลินิก</h2><p>@pukpui-clinic</p><p>เชื่อมต่อแล้วจะได้รับเตือนนัด บัตรคิว และแจ้งเตือนเมื่อถึงคิวทาง LINE</p></div><div class="btns"><button class="cta line" data-act="line-yes">เพิ่มเพื่อนและเชื่อมต่อ</button><button class="ghost-btn" data-act="close-modal">ไว้ทีหลัง</button></div>');break;
+    case 'line-yes':
+      sync();S.line.connected=true;
+      linePush('welcome',null,'สวัสดี'+ME.name+' ขอบคุณที่เพิ่มเพื่อนปุกปุย คลินิก จากนี้ระบบจะส่งเตือนนัดและแจ้งเมื่อถึงคิวให้ทางนี้');
+      var nx=upcomingMine()[0];if(nx)linePush('remind',nx,'นัดที่กำลังจะถึงของคุณ');
+      save();closeSheet();render();toast('เชื่อมต่อ LINE แล้ว');break;
+    case 'cday': cdate=v;render();break;
+    case 'st': sync();var s1=S.bookings.find(function(x){return x.id===v;});if(s1){s1.status=el.getAttribute('data-to');if(s1.mine){var m={checkedin:'เช็กอินแล้ว '+s1.pet+' รอเรียกคิวสักครู่นะ',inroom:'ถึงคิวของ'+s1.pet+'แล้ว! เชิญที่'+ROOM[s1.vet]+'ได้เลย',done:s1.pet+' ตรวจเสร็จแล้ว ขอบคุณที่ไว้ใจปุกปุย',noshow:'ไม่พบ'+s1.pet+'ตามเวลานัด ถ้าสะดวกวันอื่นจองใหม่ได้เลย'}[s1.status];if(m)cnotify(s1.status,s1,m);}save();render();toast(s1.status==='done'?s1.pet+' ตรวจเสร็จ · ยอดชำระ '+baht(bprice(s1)):s1.pet+' · '+STATUS[s1.status]);}break;
+    case 'read-all': S.notifs.forEach(function(n){n.read=true;});save();render();break;
+    case 'toggle-slot': sync();var c=S.closed[cdate]||(S.closed[cdate]={all:false,times:[]});var i=c.times.indexOf(v);
+      if(i>=0){c.times.splice(i,1);toast('เปิดรับจอง '+v+' น.');}else{c.times.push(v);toast('ปิดรับจอง '+v+' น.');}save();render();break;
+    case 'toggle-day': sync();var cd=S.closed[cdate]||(S.closed[cdate]={all:false,times:[]});cd.all=!cd.all;save();render();toast(cd.all?'ปิดทำการวันนี้แล้ว':'เปิดรับจองแล้ว');break;
+    case 'reset-ask': sheet('<h2>รีเซ็ตข้อมูลตัวอย่าง?</h2><p>นัดและแจ้งเตือนทั้งหมดในเครื่องนี้จะกลับเป็นค่าเริ่มต้น</p><div class="btns"><button class="cta red" data-act="reset-yes">รีเซ็ต</button><button class="ghost-btn" data-act="close-modal">ยกเลิก</button></div>');break;
+    case 'reset-yes': S=seed();norm();save();lastNew=null;closeSheet();render();toast('รีเซ็ตแล้ว');break;
+  }
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modal.innerHTML)closeSheet();});
+document.addEventListener('submit',function(e){
+  if(e.target.id!=='lf')return;e.preventDefault();
+  loginErr='';setRole(loginTab);sync();
+  if(role==='staff'){ctab='queue';cdate=today();go('clinic');toast('เข้าสู่ระบบหลังบ้านแล้ว');}
+  else{go('home');toast('ยินดีต้อนรับ '+ME.name);}
+});
+window.addEventListener('storage',function(e){if(e.key===KEY){
+  var c0=S.cnotifs?cUnread():0,s0=S.notifs.filter(function(n){return !n.read;}).length;
+  sync();
+  if(role==='customer'&&cUnread()>c0&&!lineOn())toast(S.cnotifs[0].text);
+  if(role==='staff'&&S.notifs.filter(function(n){return !n.read;}).length>s0)toast(S.notifs[0].text);
+  if(view!=='login'&&!(document.activeElement&&document.activeElement.id==='note'))render();}});
+setInterval(function(){if(view!=='login'&&!modal.innerHTML&&!(document.activeElement&&document.activeElement.id==='note'))render();},60000);
+render();
+})();
+</script>
+</body>
+</html>
